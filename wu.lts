@@ -1,0 +1,26 @@
+const Threshold = 2  // limit to cars in queue
+const False     = 0
+const True      = 1
+range Bool      = False..True
+
+
+/*
+      qz1   x
+
+  x   cz1  cz2  qz2
+
+ qz4  cz3  cz4   x
+
+       x   qz3
+*/
+
+
+CAR(ID=1,LID=1) = IDLE[False],
+IDLE[p:Bool]    = (when (p == False) enter -> request[ID][LID] -> WAITING
+                  | when (p == True) finished -> IDLE[p]),
+WAITING         = (permit[ID] -> PASSING),
+PASSING         = (release[ID] -> IDLE[True]).
+
+CONTROLLER = (request[v:1..Threshold][v] -> permit[v] -> release[v] -> CONTROLLER).
+
+||INTERSECTION = (CAR(1,1) || CAR(2,2) || CONTROLLER).
