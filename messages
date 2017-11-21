@@ -1,0 +1,11 @@
+all messages are prefixed with [timestamp] ip
+
+request message: REQUEST <node id>
+reject message: REJECT <reject id> <node id>
+permit message: PERMIT <permit id>
+
+DRIVE IN
+WAITING FOR REJECT
+WAITING FOR PERMIT
+PASSING
+PASSED
