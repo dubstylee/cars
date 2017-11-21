@@ -1,0 +1,21 @@
+const False = 0
+const True = 1
+range Bool = False..True
+set Cars = {[1],[2]}
+
+
+CZ = (lock -> release -> CZ).
+
+CAR(ID=0,LID=0,NID=0) = (start -> if ID==1 then CAR[True]
+                            else CAR[False]),
+CAR[has_token:Bool] = (when (has_token == True) get_token -> do_stuff -> 
+                                                pass_token[NID] -> CAR[False]
+                      |when (has_token == False) pass_token[ID] -> CAR[True]).
+
+||CARS = ([1]:CAR(1,1,2) || [2]:CAR(2,2,1))
+       / {start / Cars.start,
+          pass_token / Cars.pass_token}.
+
+||INTERSECTION = (cz[i:1..4]:CZ).
+
+||SOMETHING_COOL = (CARS || INTERSECTION).
