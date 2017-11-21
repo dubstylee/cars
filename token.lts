@@ -8,9 +8,16 @@ CZ = (lock -> release -> CZ).
 
 CAR(ID=0,LID=0,NID=0) = (start -> if ID==1 then CAR[True]
                             else CAR[False]),
-CAR[has_token:Bool] = (when (has_token == True) get_token -> do_stuff -> 
-                                                pass_token[NID] -> CAR[False]
-                      |when (has_token == False) pass_token[ID] -> CAR[True]).
+CAR[has_token:Bool] = (when (has_token == True) get_token -> GET_CZ
+                      |when (has_token == False) pass_token[ID] -> CAR[True]),
+GET_CZ = (when (ID == 1) straight -> cz[1].lock -> cz[3].lock -> pass_cz ->
+                         cz[1].release -> cz[3].release -> pass_token[NID] -> CAR[False]
+         |when (ID == 1) right_turn -> cz[1].lock -> pass_cz ->
+                         cz[1].release -> pass_token[NID] -> CAR[False]
+         |when (ID == 2) straight -> cz[2].lock -> cz[1].lock -> pass_cz ->
+                         cz[2].release -> cz[1].release -> pass_token[NID] -> CAR[False]
+         |when (ID == 2) right_turn -> cz[2].lock -> pass_cz ->
+                         cz[2].release -> pass_token[NID] -> CAR[False]).
 
 ||CARS = ([1]:CAR(1,1,2) || [2]:CAR(2,2,1))
        / {start / Cars.start,
