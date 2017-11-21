@@ -1,4 +1,6 @@
 const Threshold = 2  // limit to cars in queue
+const Cars      = 4
+const Lanes     = 4
 const False     = 0
 const True      = 1
 range Bool      = False..True
@@ -15,12 +17,19 @@ range Bool      = False..True
 */
 
 
-CAR(ID=1,LID=1) = IDLE[False],
-IDLE[p:Bool]    = (when (p == False) enter -> request[ID][LID] -> WAITING
-                  | when (p == True) finished -> IDLE[p]),
-WAITING         = (permit[ID] -> PASSING),
-PASSING         = (release[ID] -> IDLE[True]).
+CAR(ID=1,LID=1) = (arrive -> DRIVE_IN[False]),
+DRIVE_IN[p:Bool] = (straight -> send_request[ID] -> WAITING_FOR_REJECT
+                 | right_turn -> send_request[ID] -> WAITING_FOR_REJECT
+                 | receive_request[v:1..Cars] -> 
+                                    if v > ID then (add_to_high[v] -> send_permit[v][ID] -> DRIVE_IN[p])
+                                    else (add_to_low[v] -> send_reject[v][ID] -> DRIVE_IN[p])
+                 | receive_reject[ID][1..Cars] -> DRIVE_IN[p]
+                 | receive_permit[ID][1..Cars] -> DRIVE_IN[p]),
+WAITING_FOR_REJECT = (receive_permit[ID][1..Cars] -> PASSING),
+WAITING_FOR_PERMIT = (nothing_for_now -> WAITING_FOR_PERMIT),
+PASSING            = (release[ID] -> PASSED),
+PASSED             = (finished -> DRIVE_IN[True]).
 
-CONTROLLER = (request[v:1..Threshold][v] -> permit[v] -> release[v] -> CONTROLLER).
+CONTROLLER = (send_request[v:1..Cars] -> send_permit[v] -> release[v] -> CONTROLLER).
 
-||INTERSECTION = (CAR(1,1) || CAR(2,2) || CONTROLLER).
+||INTERSECTION = (CAR(1,1) || CAR(2,2) || CAR(3,3) || CAR(4,4) || CONTROLLER).
