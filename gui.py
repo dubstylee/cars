@@ -31,7 +31,9 @@ class ICS(tk.Frame):
         for i in range(numLanes) :
             for j in range(numLanes) :
                 label = tk.Label(frame);
-                label.config(highlightthickness=2, highlightbackground="black", highlightcolor="black")
+                label.config(highlightthickness=2, 
+                             highlightbackground="black", 
+                             highlightcolor="black")
                 if(i in czs and j in czs) :
                     # Figure if the current label is going to be a CZ
                     label.config(text="CZ [%d][%d]" %(i,j))
@@ -40,18 +42,18 @@ class ICS(tk.Frame):
                     label.config(text="QZ")
                 label.grid(row=i, column=j, sticky='NSEW')
                 self.labels.append(label)
-        
+
         # Lane logic
         for key, value in self.lanelookup.iteritems() :
             actualIndex = value[0]*numLanes + value[1];
             print actualIndex
-            image = Image.open("orangecar.png")
+            image = Image.open("orangecar.bmp")
             resized = image.resize((100,100), Image.ANTIALIAS);
             rotated = resized.rotate(value[2]);
-            photo = ImageTk.PhotoImage(rotated)
+            photo = ImageTk.PhotoImage(rotated)#.convert('RGB')
             #self.labels[actualIndex].config(text="Lane:%d" %key)
             self.labels[actualIndex].config(image=photo)
-            self.labels[actualIndex].photo = photo
+            self.labels[actualIndex].image = photo
 
 def on_message(client, userdata, msg):
     message = mgs.payload
