@@ -31,20 +31,16 @@ GET_CZ = (when (LID == 1) straight -> cz1.lock -> cz3.lock -> pass_token[NID] ->
          |when (LID == 4) right_turn -> cz3.lock -> pass_token[NID] -> move.cz3 ->
                           move.qz -> cz3.release -> CAR[False]).
 
-||CARS = ([1]:CAR(1,1,2) || [2]:CAR(2,2,3) || [3]:CAR(3,3,4) || [4]:CAR(4,4,5)
-       || [5]:CAR(5,1,6) || [6]:CAR(6,2,7) || [7]:CAR(7,3,8) || [8]:CAR(8,4,1))
+||LANE1 = ([1]:CAR(1,1,2) || [5]:CAR(5,1,6) || {[1],[2],[5],[6]}.cz1::CZ).
+||LANE2 = ([2]:CAR(2,2,3) || [6]:CAR(6,2,7) || {[2],[3],[6],[7]}.cz2::CZ).
+||LANE3 = ([3]:CAR(3,3,4) || [7]:CAR(7,3,8) || {[3],[4],[7],[8]}.cz4::CZ).
+||LANE4 = ([4]:CAR(4,4,5) || [8]:CAR(8,4,1) || {[4],[1],[8],[5]}.cz3::CZ).
+||CARS = (LANE1 || LANE2 || LANE3 || LANE4)
        / {start / Cars.start,
           pass_token / Cars.pass_token}.
 
-||LANE1 = ({cz1,cz3}:CZ).
-||LANE2 = ({cz2,cz1}:CZ).
-||LANE3 = ({cz4,cz2}:CZ).
-||LANE4 = ({cz3,cz4}:CZ).
-
-||INTERSECTION = ([1]:LANE1 || [2]:LANE2 || [3]:LANE3 || [4]:LANE4).
-
-||SOMETHING_COOL = (CARS || INTERSECTION)
-                 / {cz1 / {[1],[2],[5],[6]}.cz1,
-                    cz2 / {[2],[3],[6],[7]}.cz2,
-                    cz3 / {[4],[1],[5],[8]}.cz3,
-                    cz4 / {[3],[4],[7],[8]}.cz4}.
+||SOMETHING_COOL = (CARS)
+                / {cz1 / {[1],[2],[5],[6]}.cz1,
+                   cz2 / {[2],[3],[6],[7]}.cz2,
+                   cz3 / {[4],[1],[5],[8]}.cz3,
+                   cz4 / {[3],[4],[7],[8]}.cz4}.
