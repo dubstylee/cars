@@ -1,28 +1,45 @@
 const False = 0
 const True = 1
 range Bool = False..True
-set Cars = {[1],[2]}
+set Cars = {[1],[2],[3],[4]}
 
 
 CZ = (lock -> release -> CZ).
 
 CAR(ID=0,LID=0,NID=0) = (start -> if ID==1 then CAR[True]
-                            else CAR[False]),
+                                  else CAR[False]),
 CAR[has_token:Bool] = (when (has_token == True) get_token -> GET_CZ
                       |when (has_token == False) pass_token[ID] -> CAR[True]),
-GET_CZ = (when (ID == 1) straight -> cz[1].lock -> cz[3].lock -> pass_cz ->
-                         cz[1].release -> cz[3].release -> pass_token[NID] -> CAR[False]
-         |when (ID == 1) right_turn -> cz[1].lock -> pass_cz ->
-                         cz[1].release -> pass_token[NID] -> CAR[False]
-         |when (ID == 2) straight -> cz[2].lock -> cz[1].lock -> pass_cz ->
-                         cz[2].release -> cz[1].release -> pass_token[NID] -> CAR[False]
-         |when (ID == 2) right_turn -> cz[2].lock -> pass_cz ->
-                         cz[2].release -> pass_token[NID] -> CAR[False]).
+GET_CZ = (when (ID == 1) straight -> cz1.lock -> cz3.lock -> pass_cz ->
+                         cz1.release -> cz3.release -> pass_token[NID] -> CAR[False]
+         |when (ID == 1) right_turn -> cz1.lock -> pass_cz ->
+                         cz1.release -> pass_token[NID] -> CAR[False]
+         |when (ID == 2) straight -> cz2.lock -> cz1.lock -> pass_cz ->
+                         cz2.release -> cz1.release -> pass_token[NID] -> CAR[False]
+         |when (ID == 2) right_turn -> cz2.lock -> pass_cz ->
+                         cz2.release -> pass_token[NID] -> CAR[False]
+         |when (ID == 3) straight -> cz4.lock -> cz2.lock -> pass_cz ->
+                         cz4.release -> cz2.release -> pass_token[NID] -> CAR[False]
+         |when (ID == 3) right_turn -> cz4.lock -> pass_cz ->
+                         cz4.release -> pass_token[NID] -> CAR[False]
+         |when (ID == 4) straight -> cz3.lock -> cz4.lock -> pass_cz ->
+                         cz3.release -> cz4.release -> pass_token[NID] -> CAR[False]
+         |when (ID == 4) right_turn -> cz3.lock -> pass_cz ->
+                         cz3.release -> pass_token[NID] -> CAR[False]).
 
-||CARS = ([1]:CAR(1,1,2) || [2]:CAR(2,2,1))
+||CARS = ([1]:CAR(1,1,2) || [2]:CAR(2,2,3) || [3]:CAR(3,3,4) || [4]:CAR(4,4,1))
        / {start / Cars.start,
           pass_token / Cars.pass_token}.
 
-||INTERSECTION = (cz[i:1..4]:CZ).
+||LANE1 = ({cz1,cz3}:CZ).
+||LANE2 = ({cz2,cz1}:CZ).
+||LANE3 = ({cz4,cz2}:CZ).
+||LANE4 = ({cz3,cz4}:CZ).
 
-||SOMETHING_COOL = (CARS || INTERSECTION).
+||INTERSECTION = ([1]:LANE1 || [2]:LANE2 || [3]:LANE3 || [4]:LANE4).
+
+||SOMETHING_COOL = (CARS || INTERSECTION)
+                 / {cz1 / {[1],[2]}.cz1,
+                    cz2 / {[2],[3]}.cz2,
+                    cz3 / {[4],[1]}.cz3,
+                    cz4 / {[3],[4]}.cz4}.
