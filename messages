@@ -1,8 +1,30 @@
 all messages are prefixed with [timestamp] ip
 
-request message: REQUEST <node id>
-reject message: REJECT <reject id> <node id>
+request message: REQUEST <car id>
+reject message: REJECT <reject id> <car id>
 permit message: PERMIT <permit id>
+
+pass token to <node id> message: TOKEN <car id>
+subtoken to <node id>: SUBTOKEN <car id>
+lock cz message: LOCK <cz id>
+release cz message: RELEASE <cz id>
+movement message: MOVE <car id> <cz id>
+
+Example car 1 passing straight:
+TOKEN 1
+LOCK cz1
+LOCK cz3
+MOVE 1 cz1
+MOVE 1 cz3
+MOVE 1 qz
+RELEASE cz1
+RELEASE cz3
+TOKEN 2
+
+Efficiency improvements:
+- add subtoken for concurrent lanes
+- allow convoys
+- release cz after moving out to allow next car to acquire lock
 
 DRIVE IN
 WAITING FOR REJECT
