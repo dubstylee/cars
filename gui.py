@@ -1,4 +1,5 @@
 import Tkinter as tk
+from PIL import Image, ImageTk
 from enum import Enum
 from shared import mqtt_client, mqtt_topic, exit_program
 
@@ -8,10 +9,10 @@ class ICS(tk.Frame):
     labels = []
 
     lanelookup = {
-      1 : (0,1),
-      2 : (1,3),
-      3 : (3,2),
-      4 : (2,0)
+      1 : (0,1, 180),
+      2 : (1,3, 90),
+      3 : (3,2, 0),
+      4 : (2,0, 270)
     }    
 
     def __init__(self, master, frame, numLanes) :
@@ -29,7 +30,7 @@ class ICS(tk.Frame):
         # Dumb work to assign label texts
         for i in range(numLanes) :
             for j in range(numLanes) :
-                label = tk.Label(frame, height=20, width=40);
+                label = tk.Label(frame);
                 label.config(highlightthickness=2, highlightbackground="black", highlightcolor="black")
                 if(i in czs and j in czs) :
                     # Figure if the current label is going to be a CZ
@@ -37,14 +38,18 @@ class ICS(tk.Frame):
                 elif(i in qzs and j in qzs) :
                     # Figure which lane the current Label belongs to                
                     label.config(text="QZ")
-                label.grid(row=i, column=j)
+                label.grid(row=i, column=j, sticky='NSEW')
                 self.labels.append(label)
-
+        
         # Lane logic
         for key, value in self.lanelookup.iteritems() :
             actualIndex = value[0]*numLanes + value[1];
             print actualIndex
-            photo = tk.PhotoImage(file="orangecar.png")
+            image = Image.open("orangecar.png")
+            resized = image.resize((100,100), Image.ANTIALIAS);
+            rotated = resized.rotate(value[2]);
+            photo = ImageTk.PhotoImage(rotated)
+            #self.labels[actualIndex].config(text="Lane:%d" %key)
             self.labels[actualIndex].config(image=photo)
             self.labels[actualIndex].photo = photo
 
