@@ -23,6 +23,7 @@ TOKEN 2
 
 Efficiency improvements:
 - add subtoken for concurrent lanes
+- pass token after locking needed blocks
 - allow convoys
 - release cz after moving out to allow next car to acquire lock
 
