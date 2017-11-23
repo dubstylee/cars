@@ -46,10 +46,19 @@ EXIT_CZ = (park -> EXIT_CZ
 
 
 fluent CZ1_LOCK[c:Cars] = <car[c].cz1.lock, car[c].cz1.release>
+fluent CZ2_LOCK[c:Cars] = <car[c].cz2.lock, car[c].cz2.release>
+fluent CZ3_LOCK[c:Cars] = <car[c].cz3.lock, car[c].cz3.release>
+fluent CZ4_LOCK[c:Cars] = <car[c].cz4.lock, car[c].cz4.release>
 
 assert SAFE_CZ1_1 = [](!car[1].move.cz1 W CZ1_LOCK[1])
-// SAFE_CZ1_2,5,6
-// SAFE_CZ2....
-
+assert SAFE_CZ1 = (forall [c:{[1],[2],[5],[6]}] (!car[c].move.cz1 W CZ1_LOCK[c]))
+assert SAFE_CZ2 = (forall [c:{[2],[3],[6],[7]}] (!car[c].move.cz2 W CZ2_LOCK[c]))
+assert SAFE_CZ3 = (forall [c:{[1],[4],[5],[8]}] (!car[c].move.cz3 W CZ3_LOCK[c]))
+assert SAFE_CZ4 = (forall [c:{[3],[4],[7],[8]}] (!car[c].move.cz4 W CZ4_LOCK[c]))
 
 assert ALL_GET_TOKEN = (forall [c:Cars] <> car[c].get_token)
+
+property LOCK_MOVE_RELEASE = (car[c:{[1],[2],[5],[6]}].cz1.lock -> car[c].move.cz1 ->
+                              car[c].cz1.release -> LOCK_MOVE_RELEASE).
+
+||INTERSECTION = (CARS || LOCK_MOVE_RELEASE).
