@@ -4,6 +4,12 @@ from PIL import Image, ImageTk
 from enum import Enum
 from shared import mqtt_client, mqtt_topic, exit_program, control_c_handler
 
+# TODO : Add code to handle cars exiting
+# TODO : Add code to keep the UI steady, it changes in case of cars
+#        moving between blocks
+# TODO : Add code to properly size the assert and property frames
+
+
 # Intersection Control System GUI (ICS)
 signal.signal(signal.SIGINT, control_c_handler)
 
@@ -21,6 +27,9 @@ class ICS(tk.Frame):
     messagesLabel = None
     messagesText  = None    
 
+    imagesForLanes = {}
+
+    # For Lanes (initrow, initcolumn, orientation)
     laneinfolookup = {
       1 : (0,1, 180),
       2 : (1,3, 90),
@@ -28,17 +37,21 @@ class ICS(tk.Frame):
       4 : (2,0, 270)
     }    
 
+    # For Car (lane, currentrow, currentrow)
     carLocationLookup = {
-      1 : (0,1),
-      2 : (1,3),
-      3 : (3,2),
-      4 : (2,0)
+      1 : (1, 0, 1),
+      2 : (2, 1, 3),
+      3 : (3, 3, 2),
+      4 : (4, 2, 0)
     }
 
+    # For Move actions, should use as a verification
+    # for carLocationLookup after step
+    # For CZ {id:(row, column)}
     czlookup = {
-      1 : (1,2)
-      2 : (1,2)
-      3 : (2,1)
+      1 : (1,1),
+      2 : (1,2),
+      3 : (2,1),
       4 : (2,2)
     }
 
@@ -85,7 +98,8 @@ class ICS(tk.Frame):
             rotated = resized.rotate(value[2]);
             photo = ImageTk.PhotoImage(rotated)            
             self.labels[actualIndex].config(image=photo)
-            self.labels[actualIndex].image = photo
+            #self.labels[actualIndex].image = photo
+            self.imagesForLanes[key] = photo
 
         assertFrame = tk.Frame(self.topFrame)
         assertFrame.grid(row=1,column=2)
@@ -133,13 +147,39 @@ class ICS(tk.Frame):
         self.messagesText.yview(tk.END)  
 
     def takeStep(self, message) :
+        numLanes = 4
         # Code to move the cars one step ahead
-        
-        print ""
+        split = message.split(" ");
+        carid = int (split[4])
+        czid = int (split[5])
+        czNextPos = self.czlookup.get(czid)
+        carInfo = self.carLocationLookup.get(carid)
+        laneId = carInfo[0]
+        currPos = (carInfo[1], carInfo[2])
+        nextPos = None
+        if laneId == 1 :
+            nextPos = (currPos[0] + 1, currPos[1])
+        elif laneId == 2 :
+            nextPos = (currPos[0], currPos[1] - 1)
+        elif laneId == 3 :
+            nextPos = (currPos[0] - 1, currPos[1])
+        elif laneId == 4 :
+            nextPos = (currPos[0], currPos[1] + 1)
+        if czNextPos[0] == nextPos[0] and czNextPos[1] == nextPos[1] :
+            # Fetch the relevant labels, change images
+            prevIndex = currPos[0]*numLanes + currPos[1]
+            nextIndex = nextPos[0]*numLanes + nextPos[1]
+            photo = self.imagesForLanes[laneId]
+            self.labels[prevIndex].config(image='')
+            self.labels[nextIndex].config(image=photo)
+            newLocation = (laneId, nextPos[0], nextPos[1])
+            self.carLocationLookup.update(carid=newLocation)
+        else :
+            print "Error occured while moving one block"    
 
 def on_message(client, userdata, msg):
-    message = mgs.payload
-    split = messages.split(" ")
+    message = msg.payload
+    split = message.split(" ")
     if split[3] == "MOVE" :
         ics.takeStep(message)
     print message
