@@ -16,16 +16,31 @@ class ICS(tk.Frame):
     carGridFrame = None
 
     assertLabel = None
-    assertText = None    
+    assertText = None
 
+    messagesLabel = None
     messagesText  = None    
 
-    lanelookup = {
+    laneinfolookup = {
       1 : (0,1, 180),
       2 : (1,3, 90),
       3 : (3,2, 0),
       4 : (2,0, 270)
     }    
+
+    carLocationLookup = {
+      1 : (0,1),
+      2 : (1,3),
+      3 : (3,2),
+      4 : (2,0)
+    }
+
+    czlookup = {
+      1 : (1,2)
+      2 : (1,2)
+      3 : (2,1)
+      4 : (2,2)
+    }
 
     def initgui(self, numLanes) :
         self.topFrame = tk.Frame()
@@ -62,7 +77,7 @@ class ICS(tk.Frame):
                 self.labels.append(label)
 
         # Lane logic
-        for key, value in self.lanelookup.iteritems() :
+        for key, value in self.laneinfolookup.iteritems() :
             actualIndex = value[0]*numLanes + value[1]
             print actualIndex
             image = Image.open("orangecar.bmp")
@@ -88,9 +103,9 @@ class ICS(tk.Frame):
         messagesFrame.config(highlightthickness=2, 
                                   highlightbackground="black", 
                                   highlightcolor="black") 
-        messagesLabel = tk.Label(messagesFrame, width=100)
-        messagesLabel.config(text="Messages Label")
-        messagesLabel.pack()
+        self.messagesLabel = tk.Label(messagesFrame, width=100)
+        self.messagesLabel.config(text="Messages Label")
+        self.messagesLabel.pack()
         self.messagesText = tk.Listbox(messagesFrame, width=100)
         self.messagesText.pack()
 
@@ -98,9 +113,35 @@ class ICS(tk.Frame):
         tk.Frame.__init__(self, master)
         master.title("Intersection Control System")
         self.initgui(numLanes)
-       
+
+    def updateAssertLabel(self, text):
+        previousText = self.assertLabel.cget("text")
+        newText = previousText + "\n" + text
+        self.assertLabel.config(text=newText)
+
+    def updateAssertText(self, text):
+        self.assertText.insert(tk.END, text)
+        self.assertText.yview(tk.END)  
+
+    def updateMessagesLabel(self, text):
+        previousText = self.messagesLabel.cget("text")
+        newText = previousText + "\n" + text
+        self.messagesLabel.config(text=newText)
+
+    def updateMessagesText(self, text):
+        self.messagesText.insert(tk.END, text)
+        self.messagesText.yview(tk.END)  
+
+    def takeStep(self, message) :
+        # Code to move the cars one step ahead
+        
+        print ""
+
 def on_message(client, userdata, msg):
     message = mgs.payload
+    split = messages.split(" ")
+    if split[3] == "MOVE" :
+        ics.takeStep(message)
     print message
 
 ics = None
