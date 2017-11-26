@@ -2,13 +2,10 @@ import Tkinter as tk
 import signal
 from PIL import Image, ImageTk
 from enum import Enum
-from shared import mqtt_client, mqtt_topic, exit_program, control_c_handler
+from shared import mqtt_client, mqtt_topic, exit_program, control_c_handler, send_message
 
-# TODO : Add code to handle cars exiting
-# TODO : Add code to keep the UI steady, it changes in case of cars
-#        moving between blocks
+# TODO : Add code to handle cars exiting through EZ
 # TODO : Add code to properly size the assert and property frames
-
 
 # Intersection Control System GUI (ICS)
 signal.signal(signal.SIGINT, control_c_handler)
@@ -20,12 +17,15 @@ class ICS(tk.Frame):
     bottomFrame = None
 
     carGridFrame = None
+    currentAction = None
 
     assertLabel = None
     assertText = None
+    assertState = "valid"
 
-    messagesLabel = None
-    messagesText  = None    
+    propertyLabel = None
+    propertyText  = None
+    propertyState = "valid"    
 
     imagesForLanes = {}
 
@@ -49,10 +49,17 @@ class ICS(tk.Frame):
     # for carLocationLookup after step
     # For CZ {id:(row, column)}
     czlookup = {
-      1 : (1,1),
-      2 : (1,2),
-      3 : (2,1),
-      4 : (2,2)
+      "cz1" : (1,1),
+      "cz2" : (1,2),
+      "cz3" : (2,1),
+      "cz4" : (2,2),
+      "ez"  : (-1,-1)
+    }
+    revczlookup = {
+      (1,1) : "cz1",
+      (1,2) : "cz2",
+      (2,1) : "cz3",
+      (2,2) : "cz4"
     }
 
     def initgui(self, numLanes) :
@@ -76,13 +83,13 @@ class ICS(tk.Frame):
         # Dumb work to assign label texts
         for i in range(numLanes) :
             for j in range(numLanes) :
-                label = tk.Label(self.carGridFrame);
+                label = tk.Label(self.carGridFrame, height=10, width=20, bg="white")
                 label.config(highlightthickness=2, 
                              highlightbackground="black", 
                              highlightcolor="black")
                 if(i in czs and j in czs) :
                     # Figure if the current label is going to be a CZ
-                    label.config(text="CZ [%d][%d]" %(i,j))
+                    label.config(text=self.revczlookup[(i,j)])
                 elif(i in qzs and j in qzs) :
                     # Figure which lane the current Label belongs to                
                     label.config(text="QZ")
@@ -98,64 +105,78 @@ class ICS(tk.Frame):
             rotated = resized.rotate(value[2]);
             photo = ImageTk.PhotoImage(rotated)            
             self.labels[actualIndex].config(image=photo)
-            #self.labels[actualIndex].image = photo
             self.imagesForLanes[key] = photo
+
+        self.currentAction =  tk.Label(self.carGridFrame, text = "Current Action")
+        self.currentAction.grid(row=numLanes, columnspan=4)
 
         assertFrame = tk.Frame(self.topFrame)
         assertFrame.grid(row=1,column=2)
         assertFrame.config(highlightthickness=2, 
                                 highlightbackground="black", 
                                 highlightcolor="black")
-        assertLabel = tk.Label(assertFrame, width =50)
-        assertLabel.config(text="Asserts Label")
+        assertLabel = tk.Label(assertFrame, width =80)
+        assertLabel.config(text="", bg="green")
         assertLabel.pack()
-        assertText = tk.Listbox(assertFrame, width=50)
+        assertText = tk.Listbox(assertFrame, height= 39,width=80)
         assertText.pack()
 
-        messagesFrame = tk.Frame(self.bottomFrame)
-        messagesFrame.pack()
-        messagesFrame.config(highlightthickness=2, 
-                                  highlightbackground="black", 
-                                  highlightcolor="black") 
-        self.messagesLabel = tk.Label(messagesFrame, width=100)
-        self.messagesLabel.config(text="Messages Label")
-        self.messagesLabel.pack()
-        self.messagesText = tk.Listbox(messagesFrame, width=100)
-        self.messagesText.pack()
+        self.bottomFrame.config(highlightthickness=2, 
+                                highlightbackground="black", 
+                                highlightcolor="black") 
+        self.propertyLabel = tk.Label(self.bottomFrame, width=164)
+        self.propertyLabel.config(text="", bg="green")
+        self.propertyLabel.pack()
+        self.propertyText = tk.Listbox(self.bottomFrame, width=164)
+        self.propertyText.pack()
+
+        takeStepButton = tk.Button(self.bottomFrame, text="Take Step", command=self.sendTakeStep)
+        takeStepButton.pack(side=tk.BOTTOM)
+
+    def sendTakeStep(self) :
+        self.currentAction.config(text='')
+        send_message("TAKESTEP")
 
     def __init__(self, master, numLanes) :
         tk.Frame.__init__(self, master)
         master.title("Intersection Control System")
         self.initgui(numLanes)
 
-    def updateAssertLabel(self, text):
+    def updateAssertLabel(self, text) :
         previousText = self.assertLabel.cget("text")
         newText = previousText + "\n" + text
-        self.assertLabel.config(text=newText)
+        self.assertLabel.config(text=newText.strip())
 
-    def updateAssertText(self, text):
+    def updateAssertText(self, text) :
         self.assertText.insert(tk.END, text)
-        self.assertText.yview(tk.END)  
+        self.assertText.yview(tk.END)
+        if "ASSERT FAILURE" in text:
+            self.assertState = "invalid"
+            self.assertLabel.config(text="Assert Failed", bg="red")
 
-    def updateMessagesLabel(self, text):
-        previousText = self.messagesLabel.cget("text")
-        newText = previousText + "\n" + text
-        self.messagesLabel.config(text=newText)
+    def updatePropertyLabel(self, text) :
+        self.propertyLabel.config(text=text.strip())
 
-    def updateMessagesText(self, text):
-        self.messagesText.insert(tk.END, text)
-        self.messagesText.yview(tk.END)  
+    def updatePropertyText(self, text) :
+        self.propertyText.insert(tk.END, text)
+        self.propertyText.yview(tk.END)
+        if "VIOLATION OF PROPERTY" in text:
+            self.propertyState = "invalid"
+            self.propertyLabel.config(text="Property Violated", bg="red")
+
 
     def takeStep(self, message) :
         numLanes = 4
         # Code to move the cars one step ahead
         split = message.split(" ");
         carid = int (split[4])
-        czid = int (split[5])
+        czid = split[5]
         czNextPos = self.czlookup.get(czid)
         carInfo = self.carLocationLookup.get(carid)
         laneId = carInfo[0]
         currPos = (carInfo[1], carInfo[2])
+        print "Expected %d %d " %(czNextPos[0], czNextPos[1])
+        print "Current %d %d " %(currPos[0], currPos[1]) 
         nextPos = None
         if laneId == 1 :
             nextPos = (currPos[0] + 1, currPos[1])
@@ -165,6 +186,7 @@ class ICS(tk.Frame):
             nextPos = (currPos[0] - 1, currPos[1])
         elif laneId == 4 :
             nextPos = (currPos[0], currPos[1] + 1)
+        print "Calculated %d %d " %(nextPos[0], nextPos[1]) 
         if czNextPos[0] == nextPos[0] and czNextPos[1] == nextPos[1] :
             # Fetch the relevant labels, change images
             prevIndex = currPos[0]*numLanes + currPos[1]
@@ -173,16 +195,37 @@ class ICS(tk.Frame):
             self.labels[prevIndex].config(image='')
             self.labels[nextIndex].config(image=photo)
             newLocation = (laneId, nextPos[0], nextPos[1])
-            self.carLocationLookup.update(carid=newLocation)
+            self.carLocationLookup[carid]=newLocation
+            nextstep = self.revczlookup[nextPos]
+            steps = self.currentAction.cget("text")
+            steps = steps + ":" + "MOVE %d %s" %(carid, nextstep) 
+            self.currentAction.config(text=steps)
+             
+        elif czNextPos[0] == -1 and czNextPos[1] == -1 :
+            prevIndex = currPos[0]*numLanes + currPos[1]
+            self.labels[prevIndex].config(image='')
+            newLocation = (-1, -1, -1)
+            self.carLocationLookup[carid]=newLocation
+            steps = self.currentAction.cget("text")
+            steps = steps + ":" + "EXIT %d" %carid 
+            self.currentAction.config(text=steps)
         else :
-            print "Error occured while moving one block"    
+            print "Error occured while moving one block"
 
 def on_message(client, userdata, msg):
     message = msg.payload
-    split = message.split(" ")
+    print message
+    split = message.split(" ", 4)
     if split[3] == "MOVE" :
         ics.takeStep(message)
-    print message
+    elif split[3] == "LABELA" :
+        ics.updateAssertLabel(split[4])
+    elif split[3] == "LABELB" :
+        ics.updatePropertyLabel(split[4]);
+    elif split[3] == "UPDATEA" and ics.assertState == "valid" :
+        ics.updateAssertText(split[4]);
+    elif split[3] == "UPDATEB" and ics.propertyState == "valid" :
+        ics.updatePropertyText(split[4]); 
 
 ics = None
 
