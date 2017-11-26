@@ -1,0 +1,4 @@
+python car.py 1 1 2 &
+python car.py 2 2 3 &
+python car.py 3 3 4 &
+python car.py 4 4 1 &
