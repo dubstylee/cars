@@ -9,11 +9,16 @@ signal.signal(signal.SIGINT, control_c_handler)
 
 class ICS(tk.Frame):
     labels = []
+
     topFrame = None
     bottomFrame = None
+
     carGridFrame = None
-    assertFrame = None    
-    messagesFrame = None    
+
+    assertLabel = None
+    assertText = None    
+
+    messagesText  = None    
 
     lanelookup = {
       1 : (0,1, 180),
@@ -22,10 +27,7 @@ class ICS(tk.Frame):
       4 : (2,0, 270)
     }    
 
-    def __init__(self, master, numLanes) :
-        tk.Frame.__init__(self, master)
-        master.title("Intersection Control System")
-       
+    def initgui(self, numLanes) :
         self.topFrame = tk.Frame()
         self.topFrame.grid(row=1, sticky='NSEW')
 
@@ -70,28 +72,33 @@ class ICS(tk.Frame):
             self.labels[actualIndex].config(image=photo)
             self.labels[actualIndex].image = photo
 
-        self.assertFrame = tk.Frame(self.topFrame)
-        self.assertFrame.grid(row=1,column=2)
-        self.assertFrame.config(highlightthickness=2, 
+        assertFrame = tk.Frame(self.topFrame)
+        assertFrame.grid(row=1,column=2)
+        assertFrame.config(highlightthickness=2, 
                                 highlightbackground="black", 
                                 highlightcolor="black")
-        label = tk.Label(self.assertFrame, width =50)
-        label.config(text="Asserts Label")
-        label.pack()
-        listbox = tk.Listbox(self.assertFrame, width=50)
-        listbox.pack()
+        assertLabel = tk.Label(assertFrame, width =50)
+        assertLabel.config(text="Asserts Label")
+        assertLabel.pack()
+        assertText = tk.Listbox(assertFrame, width=50)
+        assertText.pack()
 
-        self.messagesFrame = tk.Frame(self.bottomFrame)
-        self.messagesFrame.pack()
-        self.messagesFrame.config(highlightthickness=2, 
+        messagesFrame = tk.Frame(self.bottomFrame)
+        messagesFrame.pack()
+        messagesFrame.config(highlightthickness=2, 
                                   highlightbackground="black", 
                                   highlightcolor="black") 
-        label = tk.Label(self.messagesFrame, width=100)
-        label.config(text="Messages Label")
-        label.pack()
-        listbox = tk.Listbox(self.messagesFrame, width=100)
-        listbox.pack()
+        messagesLabel = tk.Label(messagesFrame, width=100)
+        messagesLabel.config(text="Messages Label")
+        messagesLabel.pack()
+        self.messagesText = tk.Listbox(messagesFrame, width=100)
+        self.messagesText.pack()
 
+    def __init__(self, master, numLanes) :
+        tk.Frame.__init__(self, master)
+        master.title("Intersection Control System")
+        self.initgui(numLanes)
+       
 def on_message(client, userdata, msg):
     message = mgs.payload
     print message
