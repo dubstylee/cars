@@ -1,6 +1,6 @@
 from enum import Enum
-from shared import mqtt_client, mqtt_topic, send_message, exit_program, ON, OFF
-import signal
+from shared import mqtt_client, mqtt_topic, send_message, exit_program
+import random
 import sys
 import time
 
@@ -17,6 +17,9 @@ class Car():
     next_id = 0
     lane_id = 0
     state = Status.MAIN
+    current_action = 0
+    actions = []
+    cz_status = {"cz1": False, "cz2": False, "cz3": False, "cz4": False}
 
     def __init__(self, id, lane_id, next_id):
         self.id = id
@@ -24,20 +27,111 @@ class Car():
         self.next_id = next_id
 
     def pass_token(self, id):
-        send_message("TOKEN %d" % id)
+        self.actions.append("TOKEN %d" % id)
+        # send_message("TOKEN %d" % id)
 
     def lock(self, block):
-        print("[CAR %d]: locking block %s" % (self.id, block))
-        send_message("LOCK %d %s" % (self.id, block))
+        self.actions.append("LOCK %d %s" % (self.id, block))
+        # print("[CAR %d]: locking block %s" % (self.id, block))
+        # send_message("LOCK %d %s" % (self.id, block))
 
     def move(self, block):
-        print("[CAR %d]: moving to block %s" % (self.id, block))
-        send_message("MOVE %d %s" % (self.id, block))
+        self.actions.append("MOVE %d %s" % (self.id, block))
+        # print("[CAR %d]: moving to block %s" % (self.id, block))
+        # send_message("MOVE %d %s" % (self.id, block))
 
     def release(self, block):
-        print("[CAR %d]: releasing block %s" % (self.id, block))
-        send_message("RELEASE %d %s" % (self.id, block))
+        self.actions.append("RELEASE %d %s" % (self.id, block))
+        # print("[CAR %d]: releasing block %s" % (self.id, block))
+        # send_message("RELEASE %d %s" % (self.id, block))
 
+    def straight(self):
+        if self.id == 1 or self.id == 5:
+            self.lock("cz1")
+            self.lock("cz3")
+            self.pass_token(self.next_id)
+            self.move("cz1")
+            self.move("cz3")
+            self.release("cz1")
+            self.actions.append("WAIT 1")
+            self.actions.append("WAIT 1")
+            self.actions.append("WAIT 1")
+            self.actions.append("WAIT 1")
+            self.actions.append("WAIT 1")
+            self.actions.append("WAIT 1")
+            self.move("ez")
+            self.release("cz3")
+        if self.id == 2 or self.id == 6:
+            self.lock("cz2")
+            self.lock("cz1")
+            self.pass_token(self.next_id)
+            self.move("cz2")
+            self.move("cz1")
+            self.release("cz2")
+            self.actions.append("WAIT 1")
+            self.actions.append("WAIT 1")
+            self.actions.append("WAIT 1")
+            self.actions.append("WAIT 1")
+            self.actions.append("WAIT 1")
+            self.actions.append("WAIT 1")
+            self.move("ez")
+            self.release("cz1")
+        if self.id == 3 or self.id == 7:
+            self.lock("cz4")
+            self.lock("cz2")
+            self.pass_token(self.next_id)
+            self.move("cz4")
+            self.move("cz2")
+            self.release("cz4")
+            self.actions.append("WAIT 1")
+            self.actions.append("WAIT 1")
+            self.actions.append("WAIT 1")
+            self.actions.append("WAIT 1")
+            self.actions.append("WAIT 1")
+            self.actions.append("WAIT 1")
+            self.move("ez")
+            self.release("cz2")
+        if self.id == 4 or self.id == 8:
+            self.lock("cz3")
+            self.lock("cz4")
+            self.pass_token(self.next_id)
+            self.move("cz3")
+            self.move("cz4")
+            self.release("cz3")
+            self.actions.append("WAIT 1")
+            self.actions.append("WAIT 1")
+            self.actions.append("WAIT 1")
+            self.actions.append("WAIT 1")
+            self.actions.append("WAIT 1")
+            self.actions.append("WAIT 1")
+            self.move("ez")
+            self.release("cz4")
+
+    def turn_right(self):
+        if self.id == 1 or self.id == 5:
+            self.lock("cz1")
+            self.pass_token(self.next_id)
+            self.move("cz1")
+            self.move("ez")
+            self.release("cz1")
+        elif self.id == 2 or self.id == 6:
+            self.lock("cz2")
+            self.pass_token(self.next_id)
+            self.move("cz2")
+            self.move("ez")
+            self.release("cz2")
+        elif self.id == 3 or self.id == 7:
+            self.lock("cz4")
+            self.pass_token(self.next_id)
+            self.move("cz4")
+            self.move("ez")
+            self.release("cz4")
+        elif self.id == 4 or self.id == 8:
+            self.lock("cz3")
+            self.pass_token(self.next_id)
+            self.move("cz3")
+            self.move("ez")
+            self.release("cz3")
 
 car = None
 
@@ -51,9 +145,32 @@ def on_message(client, userdata, msg):
     if action in ["LABELA", "LABELB", "UPDATEA", "UPDATEB"]:
         return
 
-    if action == "RELEASE":
-        # see if we want the released block
+    if action == "TAKESTEP":
+        if car.current_action < len(car.actions):
+            if car.state in [Status.MAIN, Status.QUEUED, Status.PASSING]:
+                log(message)
+
+            current_action = car.actions[car.current_action]
+            act_split = current_action.split(' ')
+            if act_split[0] == "LOCK":
+                log("CHECK LOCK STATUS FOR %s" % act_split[2])
+                lock_state = car.cz_status[act_split[2]]
+                if lock_state:
+                    log("%s locked" % act_split[2])
+                    return
+            elif act_split[0] == "MOVE" and act_split[2] == "ez":
+                car.state = Status.PARKED
+
+            send_message(car.actions[car.current_action])
+            car.current_action = car.current_action + 1
+
+    elif action == "LOCK":
         block = splits[5]
+        car.cz_status[block] = True
+
+    elif action == "RELEASE":
+        block = splits[5]
+        car.cz_status[block] = False
 
     elif action == "TOKEN":
         car_id = int(splits[4])
@@ -64,15 +181,29 @@ def on_message(client, userdata, msg):
 
         if car.state in [Status.MAIN, Status.PARKED]:
             # pass the token along to next car
+            log("passing token to %d" % car.next_id)
             car.pass_token(car.next_id)
         elif car.state == Status.PASSING:
             # we are already in the CZ, check for convoy?
-            print("check lane %d for convoy" % car.lane_id)
+            log("check lane %d for convoy" % car.lane_id)
             car.pass_token(car.next_id)
         elif car.state == Status.QUEUED:
-            print(message)
+            # print(message)
             # lock our blocks then pass the token
-            car.lock("cz##")
+            if random.random() * 100 > 0:
+                # go straight
+                log("GOING STRAIGHT")
+                car.straight()
+            else:
+                # turn right
+                log("TURNING RIGHT")
+                car.turn_right()
+
+            car.state = Status.PASSING
+
+
+def log(message):
+    print("[CAR %d]: %s" % (car.id, message))
 
 
 def main():
@@ -86,12 +217,17 @@ def main():
     mqtt_client.on_message = on_message
     mqtt_client.loop_start()
 
-    # enter QZ after random delay
-    car.state = Status.QUEUED
-
     if car.id == 1:
         # car 1 starts with the token
         car.pass_token(1)
+
+    # enter QZ after random delay
+    delay = 1 + (random.random() * 8)
+    if car.id == 1:
+        delay = delay + 5
+    log("delaying %f seconds before entering queue" % delay)
+    time.sleep(delay)
+    car.state = Status.QUEUED
 
     while True:
         time.sleep(0.5)

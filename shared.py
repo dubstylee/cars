@@ -21,6 +21,7 @@ mqtt_topic = 'cis650/somethingcool'
 mqtt_client = paho.Client()
 mqtt_client.connect(broker, '1883')
 mqtt_client.subscribe(mqtt_topic)
+connected = False
 
 
 def exit_program():
@@ -34,11 +35,11 @@ def control_c_handler(signum, frame):
 
 
 def on_connect(client, userdata, flags, rc):
-    print("connected")
+    connected = True
 
 
 def on_disconnect(client, userdata, rc):
-    print("disconnected in a normal way")
+    connected = False
 
 
 def on_log(client, userdata, level, buf):

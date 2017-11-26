@@ -2,12 +2,18 @@ from shared import exit_program, mqtt_client, mqtt_topic, send_message
 import signal
 import time
 
-properties = {"LOCK_MOVE_RELEASE": [["LOCK <car_id> cz1",
-                                     "car[car_id].cz1.lock"],
-                                    ["MOVE <car_id> cz1",
-                                     "car[car_id].move.cz1"],
-                                    ["RELEASE <car_id> cz1",
-                                     "car[car_id].cz1.release"]]}
+properties = {"LOCK_MOVE_RELEASE1": [["LOCK # cz1",
+                                      "car[#].cz1.lock"],
+                                     ["MOVE # cz1",
+                                      "car[#].move.cz1"],
+                                     ["RELEASE # cz1",
+                                      "car[#].cz1.release"]],
+              "LOCK_MOVE_RELEASE2": [["LOCK # cz2",
+                                      "car[#].cz2.lock"],
+                                     ["MOVE # cz2",
+                                      "car[#].move.cz2"],
+                                     ["RELEASE # cz2",
+                                      "car[#].cz2.release"]]}
 
 
 class Prop():
@@ -15,6 +21,7 @@ class Prop():
         self.name = name
         self.alphabet = alphabet
         self.status = 0
+        self.cur_val = 0
 
     def __repr__(self):
         text = "property %s = (" % self.name
@@ -57,6 +64,26 @@ def on_message(client, userdata, msg):
             if actions[i][0] == splits[3]:
                 found = True
                 break
+            elif "#" in actions[i][0]:
+                if p.cur_val != 0:
+                    if actions[i][0].replace("#", str(p.cur_val)) == splits[3]:
+                        found = True
+                        break
+                else:
+                    actions_split = actions[i][0].split(' ')
+                    splits_split = splits[3].split(' ')
+                    for j in range(len(actions_split)):
+                        if actions_split[j] == "#":
+                            print("updating # to == %d" % int(splits_split[j]))
+                            p.cur_val = int(splits_split[j])
+                            break
+                        elif actions_split[j] != splits_split[j]:
+                            # not a match
+                            break
+
+                    if actions[i][0].replace("#", str(p.cur_val)) == splits[3]:
+                        found = True
+                        break
 
         if found:
             send_message("UPDATEB %s %s %s: %s" %

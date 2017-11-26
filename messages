@@ -1,34 +1,22 @@
 all messages are prefixed with [timestamp] ip
 
-request message: REQUEST <car id>
-reject message: REJECT <reject id> <car id>
-permit message: PERMIT <permit id>
-
-pass token to <node id> message: TOKEN <car id>
-subtoken to <node id>: SUBTOKEN <car id>
-lock cz message: LOCK <cz id>
-release cz message: RELEASE <cz id>
+pass token to <car id> message: TOKEN <car id>
+subtoken to <car id>: SUBTOKEN <car id>
+lock cz message: LOCK <car id> <cz id>
+release cz message: RELEASE <car id> <cz id>
 movement message: MOVE <car id> <cz id>
 
 Example car 1 passing straight:
 TOKEN 1
-LOCK cz1
-LOCK cz3
+LOCK 1 cz1
+LOCK 1 cz3
+TOKEN 2
 MOVE 1 cz1
 MOVE 1 cz3
-MOVE 1 qz
-RELEASE cz1
-RELEASE cz3
-TOKEN 2
+RELEASE 1 cz1
+MOVE 1 ez
+RELEASE 1 cz3
 
 Efficiency improvements:
 - add subtoken for concurrent lanes
-- pass token after locking needed blocks
 - allow convoys
-- release cz after moving out to allow next car to acquire lock
-
-DRIVE IN
-WAITING FOR REJECT
-WAITING FOR PERMIT
-PASSING
-PASSED
