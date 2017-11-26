@@ -107,7 +107,8 @@ class ICS(tk.Frame):
             self.labels[actualIndex].config(image=photo)
             self.imagesForLanes[key] = photo
 
-        self.currentAction =  tk.Label(self.carGridFrame, text = "Current Action")
+        self.currentAction =  tk.Label(self.carGridFrame, text = "Current Action", 
+                                       font="Verdana 12 bold")
         self.currentAction.grid(row=numLanes, columnspan=4)
 
         assertFrame = tk.Frame(self.topFrame)
