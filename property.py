@@ -131,7 +131,7 @@ def update_properties():
             label_str = label_str + "\n"
         label_str = label_str + ("%s" % property_list[i])
 
-    print(label_str)
+    # print(label_str)
     send_message("LABELB %s" % label_str)
 
 
