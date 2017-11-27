@@ -26,6 +26,8 @@ properties = {"LOCK_MOVE_RELEASE1": [["LOCK # cz1",
                                       "car[#].move.cz4"],
                                      ["RELEASE # cz4",
                                       "car[#].cz4.release"]]}
+
+
 class Prop():
     def __init__(self, name, alphabet):
         self.name = name
@@ -49,6 +51,7 @@ property_list = []
 for p in properties:
     prop = Prop(p, properties[p])
     property_list.append(prop)
+property_list.sort(key=lambda property: property.name)
 
 
 def control_c_handler(signum, frame):
