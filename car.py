@@ -16,6 +16,7 @@ class Car():
     id = 0
     next_id = 0
     lane_id = 0
+    auto_pilot = False
     state = Status.MAIN
     current_action = 0
     actions = []
@@ -25,6 +26,29 @@ class Car():
         self.id = id
         self.lane_id = lane_id
         self.next_id = next_id
+
+    def take_action(self):
+        if self.current_action < len(self.actions):
+            # if self.state in [Status.MAIN, Status.QUEUED, Status.PASSING]:
+            #     log(message)
+
+            current_action = self.actions[self.current_action]
+            act_split = current_action.split(' ')
+            if act_split[0] == "LOCK":
+                log("CHECK LOCK STATUS FOR %s" % act_split[2])
+                lock_state = self.cz_status[act_split[2]]
+                if lock_state:
+                    log("%s locked" % act_split[2])
+                    return
+            elif act_split[0] == "MOVE" and act_split[2] == "ez":
+                self.state = Status.PARKED
+
+            send_message(self.actions[self.current_action])
+            self.current_action = self.current_action + 1
+
+            # after releasing the lock, go ahead and take the next action
+            if act_split[0] == "RELEASE":
+                self.take_action()
 
     def pass_token(self, id):
         self.actions.append("TOKEN %d" % id)
@@ -51,12 +75,8 @@ class Car():
             self.lock("cz3")
             self.pass_token(self.next_id)
             self.move("cz1")
-            self.actions.append("WAIT 1")
-            self.actions.append("WAIT 1")
             self.move("cz3")
             self.release("cz1")
-            self.actions.append("WAIT 1")
-            self.actions.append("WAIT 1")
             self.move("ez")
             self.release("cz3")
         if self.id == 2 or self.id == 6:
@@ -64,12 +84,8 @@ class Car():
             self.lock("cz1")
             self.pass_token(self.next_id)
             self.move("cz2")
-            self.actions.append("WAIT 1")
-            self.actions.append("WAIT 1")
             self.move("cz1")
             self.release("cz2")
-            self.actions.append("WAIT 1")
-            self.actions.append("WAIT 1")
             self.move("ez")
             self.release("cz1")
         if self.id == 3 or self.id == 7:
@@ -77,12 +93,8 @@ class Car():
             self.lock("cz2")
             self.pass_token(self.next_id)
             self.move("cz4")
-            self.actions.append("WAIT 1")
-            self.actions.append("WAIT 1")
             self.move("cz2")
             self.release("cz4")
-            self.actions.append("WAIT 1")
-            self.actions.append("WAIT 1")
             self.move("ez")
             self.release("cz2")
         if self.id == 4 or self.id == 8:
@@ -90,12 +102,8 @@ class Car():
             self.lock("cz4")
             self.pass_token(self.next_id)
             self.move("cz3")
-            self.actions.append("WAIT 1")
-            self.actions.append("WAIT 1")
             self.move("cz4")
             self.release("cz3")
-            self.actions.append("WAIT 1")
-            self.actions.append("WAIT 1")
             self.move("ez")
             self.release("cz4")
 
@@ -182,7 +190,7 @@ def on_message(client, userdata, msg):
         elif car.state == Status.QUEUED:
             # print(message)
             # lock our blocks then pass the token
-            if random.random() * 100 > 0:
+            if random.random() * 100 > 50:
                 # go straight
                 log("GOING STRAIGHT")
                 car.straight()
@@ -200,11 +208,13 @@ def log(message):
 
 def main():
     global car
-    if len(sys.argv) != 4:
-        print "Usage: car <id> <lane_id> <next_id>"
+    if len(sys.argv) < 4 or len(sys.argv) > 5:
+        print "Usage: car <id> <lane_id> <next_id> [auto]"
         exit_program()
 
     car = Car(int(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3]))
+    if len(sys.argv) == 5 and sys.argv[4] == "auto":
+        car.auto_pilot = True
     mqtt_client.will_set(mqtt_topic, "__WILL OF CAR %d__" % car.id, 0, False)
     mqtt_client.on_message = on_message
     mqtt_client.loop_start()
@@ -227,7 +237,11 @@ def main():
             if random.randint(0, 10) == 10:
                 car.state = Status.QUEUED
 
-        time.sleep(0.5)
+
+        if car.auto_pilot and car.state in [Status.QUEUED, Status.PASSING, Status.PARKED]:
+            car.take_action()
+
+        time.sleep(1)
 
 
 if __name__ == "__main__":
