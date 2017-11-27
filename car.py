@@ -51,12 +51,10 @@ class Car():
             self.lock("cz3")
             self.pass_token(self.next_id)
             self.move("cz1")
+            self.actions.append("WAIT 1")
+            self.actions.append("WAIT 1")
             self.move("cz3")
             self.release("cz1")
-            self.actions.append("WAIT 1")
-            self.actions.append("WAIT 1")
-            self.actions.append("WAIT 1")
-            self.actions.append("WAIT 1")
             self.actions.append("WAIT 1")
             self.actions.append("WAIT 1")
             self.move("ez")
@@ -66,12 +64,10 @@ class Car():
             self.lock("cz1")
             self.pass_token(self.next_id)
             self.move("cz2")
+            self.actions.append("WAIT 1")
+            self.actions.append("WAIT 1")
             self.move("cz1")
             self.release("cz2")
-            self.actions.append("WAIT 1")
-            self.actions.append("WAIT 1")
-            self.actions.append("WAIT 1")
-            self.actions.append("WAIT 1")
             self.actions.append("WAIT 1")
             self.actions.append("WAIT 1")
             self.move("ez")
@@ -81,12 +77,10 @@ class Car():
             self.lock("cz2")
             self.pass_token(self.next_id)
             self.move("cz4")
+            self.actions.append("WAIT 1")
+            self.actions.append("WAIT 1")
             self.move("cz2")
             self.release("cz4")
-            self.actions.append("WAIT 1")
-            self.actions.append("WAIT 1")
-            self.actions.append("WAIT 1")
-            self.actions.append("WAIT 1")
             self.actions.append("WAIT 1")
             self.actions.append("WAIT 1")
             self.move("ez")
@@ -96,12 +90,10 @@ class Car():
             self.lock("cz4")
             self.pass_token(self.next_id)
             self.move("cz3")
+            self.actions.append("WAIT 1")
+            self.actions.append("WAIT 1")
             self.move("cz4")
             self.release("cz3")
-            self.actions.append("WAIT 1")
-            self.actions.append("WAIT 1")
-            self.actions.append("WAIT 1")
-            self.actions.append("WAIT 1")
             self.actions.append("WAIT 1")
             self.actions.append("WAIT 1")
             self.move("ez")
@@ -219,17 +211,22 @@ def main():
 
     if car.id == 1:
         # car 1 starts with the token
-        car.pass_token(1)
+        car.pass_token(car.id)
 
     # enter QZ after random delay
-    delay = 1 + (random.random() * 8)
-    if car.id == 1:
-        delay = delay + 5
-    log("delaying %f seconds before entering queue" % delay)
-    time.sleep(delay)
-    car.state = Status.QUEUED
+    # delay = 1 + (random.random() * 8)
+    # if car.id == 1:
+    #    delay = delay + 5
+    # log("delaying %f seconds before entering queue" % delay)
+    # time.sleep(delay)
+    # car.state = Status.QUEUED
 
     while True:
+        # 10% chance for car to enter QZ
+        if car.state == Status.MAIN:
+            if random.randint(0, 10) == 10:
+                car.state = Status.QUEUED
+
         time.sleep(0.5)
 
 

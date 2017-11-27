@@ -13,9 +13,19 @@ properties = {"LOCK_MOVE_RELEASE1": [["LOCK # cz1",
                                      ["MOVE # cz2",
                                       "car[#].move.cz2"],
                                      ["RELEASE # cz2",
-                                      "car[#].cz2.release"]]}
-
-
+                                      "car[#].cz2.release"]],
+              "LOCK_MOVE_RELEASE3": [["LOCK # cz3",
+                                      "car[#].cz3.lock"],
+                                     ["MOVE # cz3",
+                                      "car[#].move.cz3"],
+                                     ["RELEASE # cz3",
+                                      "car[#].cz3.release"]],
+              "LOCK_MOVE_RELEASE4": [["LOCK # cz4",
+                                      "car[#].cz4.lock"],
+                                     ["MOVE # cz4",
+                                      "car[#].move.cz4"],
+                                     ["RELEASE # cz4",
+                                      "car[#].cz4.release"]]}
 class Prop():
     def __init__(self, name, alphabet):
         self.name = name
@@ -56,40 +66,51 @@ signal.signal(signal.SIGINT, control_c_handler)
 
 def on_message(client, userdata, msg):
     splits = msg.payload.split(' ', 3)
+    action = splits[3]
 
+    # ignore gui actions
+    if action in ["LABELA", "LABELB", "UPDATEA", "UPDATEB"]:
+        return
+
+    found = False
     for p in property_list:
-        found = False
+        found_inner = False
         actions = p.alphabet
         for i in range(0, len(actions)):
             if actions[i][0] == splits[3]:
-                found = True
+                new_action = actions[i][0]
+                found_inner = True
                 break
             elif "#" in actions[i][0]:
+                new_action = actions[i][0].replace("#", str(p.cur_val))
                 if p.cur_val != 0:
-                    if actions[i][0].replace("#", str(p.cur_val)) == splits[3]:
-                        found = True
+                    if new_action == splits[3]:
+                        found_inner = True
                         break
                 else:
                     actions_split = actions[i][0].split(' ')
                     splits_split = splits[3].split(' ')
                     for j in range(len(actions_split)):
                         if actions_split[j] == "#":
-                            print("updating # to == %d" % int(splits_split[j]))
                             p.cur_val = int(splits_split[j])
                             break
                         elif actions_split[j] != splits_split[j]:
-                            # not a match
+                            # not a match, break out of inner loop
                             break
 
-                    if actions[i][0].replace("#", str(p.cur_val)) == splits[3]:
-                        found = True
+                    new_action = actions[i][0].replace("#", str(p.cur_val))
+                    if new_action == splits[3]:
+                        found_inner = True
                         break
 
-        if found:
+        if found_inner:
+            found = True
             send_message("UPDATEB %s %s %s: %s" %
                          (splits[0], splits[1], p.name, splits[3]))
-            if actions[p.status][0] == splits[3]:
+            if actions[p.status][0].replace("#", str(p.cur_val)) == splits[3]:
                 p.status = (p.status + 1) % len(p.alphabet)
+                if p.status == 0:
+                    p.cur_val = 0
             elif "<>" in actions[p.status][1]:
                 print("ALPHABET ACTION SEEN, STILL WAITING FOR EVENTUALLY")
             else:
@@ -107,6 +128,7 @@ def update_properties():
             label_str = label_str + "\n"
         label_str = label_str + ("%s" % property_list[i])
 
+    print(label_str)
     send_message("LABELB %s" % label_str)
 
 
