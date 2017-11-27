@@ -5,7 +5,6 @@ from enum import Enum
 from shared import mqtt_client, mqtt_topic, exit_program, control_c_handler, send_message
 
 # TODO : Add code to handle cars exiting through EZ
-# TODO : Add code to properly size the assert and property frames
 
 # Intersection Control System GUI (ICS)
 signal.signal(signal.SIGINT, control_c_handler)
@@ -62,6 +61,13 @@ class ICS(tk.Frame):
       (2,2) : "cz4"
     }
 
+ 
+    def cleargui(self) :
+        self.topFrame.destroy()
+        self.bottomFrame.destroy()
+        del self.labels[:]
+        self.initgui(4)
+
     def initgui(self, numLanes) :
         self.topFrame = tk.Frame()
         self.topFrame.grid(row=1, sticky='NSEW')
@@ -99,7 +105,6 @@ class ICS(tk.Frame):
         # Lane logic
         for key, value in self.laneinfolookup.iteritems() :
             actualIndex = value[0]*numLanes + value[1]
-            print actualIndex
             image = Image.open("orangecar.bmp")
             resized = image.resize((100,100), Image.ANTIALIAS)
             rotated = resized.rotate(value[2]);
@@ -133,6 +138,9 @@ class ICS(tk.Frame):
 
         takeStepButton = tk.Button(self.bottomFrame, text="Take Step", command=self.sendTakeStep)
         takeStepButton.pack(side=tk.BOTTOM)
+
+        clearButton = tk.Button(self.bottomFrame, text="Clear GUI", command=self.cleargui)
+        clearButton.pack(side=tk.BOTTOM)
 
     def sendTakeStep(self) :
         self.currentAction.config(text='')
