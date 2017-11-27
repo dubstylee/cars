@@ -37,12 +37,7 @@ class ICS(tk.Frame):
     }    
 
     # For Car (lane, currentrow, currentrow)
-    carLocationLookup = {
-      1 : (1, 0, 1),
-      2 : (2, 1, 3),
-      3 : (3, 3, 2),
-      4 : (4, 2, 0)
-    }
+    carLocationLookup = None
 
     # For Move actions, should use as a verification
     # for carLocationLookup after step
@@ -69,6 +64,13 @@ class ICS(tk.Frame):
         self.initgui(4)
 
     def initgui(self, numLanes) :
+        self.carLocationLookup =  {
+            1 : (1, 0, 1),
+            2 : (2, 1, 3),
+            3 : (3, 3, 2),
+            4 : (4, 2, 0)
+        }
+
         self.topFrame = tk.Frame()
         self.topFrame.grid(row=1, sticky='NSEW')
 
