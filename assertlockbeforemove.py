@@ -18,35 +18,37 @@ class Fluent() :
         self.identifier = param
 
     def checkFluent(self, message) :
-        print "Checking Fluent"
         # Add LED stuff here
         if message == "LOCK" :
-            status = FluentStatus.ON
-        elif messsage == "RELEASE" :
-            status = FluentStatus.OFF
+            self.status = FluentStatus.ON
+        elif message == "RELEASE" :
+            self.status = FluentStatus.OFF
 
 def on_message(client, userdata, msg) :
+    global trackczid
+    global Fluents
     message = msg.payload
-    print message
     split = message.split(" ")
     if split[3] == "LOCK" or split[3] == "RELEASE" :
         czid = split[5]
-        if(trackzcid != czid)
+        if(trackczid != czid) : 
             return
         carid = int(split[4])
-        fluent = Fluents[carid]
-        if fluent != None
+        fluent = Fluents.get(carid, None)
+        if fluent != None :
             fluent.checkFluent(split[3])
     elif split[3] == "MOVE" :
         czid = split[5]
-        if(trackzcid != czid)
+        if(trackczid != czid) :
             return 
         carid = int(split[4])
-        fluent = Fluents[carid]
-        if fluent != None and fluent.status != FluentStatus.ON
-            send_message("ASSERT FAILURE");
+        fluent = Fluents.get(carid, None)
+        if fluent != None and fluent.status != FluentStatus.ON :
+            send_message("ASSERT FAILURE")
 
 def main() :
+    global trackczid
+    global Fluents
     numParams = len(sys.argv)
 
     if numParams < 3 :
@@ -55,10 +57,14 @@ def main() :
         exit_program()
 
     trackczid = "cz%d" %int(sys.argv[1])
-    for i in range(2, numParames)
-        Fluents[numParams] = Fluent(int(sys.argv[i]))
+    for i in range(2, numParams) :
+        Fluents[int(sys.argv[i])] = Fluent(int(sys.argv[i]))
 
-    send_message("LABELA Assert lock before move for lane %d", trackczid)
+    mqtt_client.on_message = on_message
+    mqtt_client.will_set(mqtt_topic, "Will of Assert\n\n", 0, False)
+    mqtt_client.loop_start()
+
+    send_message("LABELA Assert lock before move for lane %s" %trackczid)
 
     while True :
         time.sleep(1)
