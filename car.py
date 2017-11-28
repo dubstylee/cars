@@ -27,11 +27,15 @@ class Car():
         self.lane_id = lane_id
         self.next_id = next_id
 
+    def process_action(self, action):
+        if self.auto_pilot:
+            # do any special stuff here
+            self.actions.append(action)
+        else:
+            self.actions.append(action)
+
     def take_action(self):
         if self.current_action < len(self.actions):
-            # if self.state in [Status.MAIN, Status.QUEUED, Status.PASSING]:
-            #     log(message)
-
             current_action = self.actions[self.current_action]
             act_split = current_action.split(' ')
             if act_split[0] == "LOCK":
@@ -51,26 +55,23 @@ class Car():
                 self.take_action()
 
     def pass_token(self, id):
-        self.actions.append("TOKEN %d" % id)
-        # send_message("TOKEN %d" % id)
+        action = "TOKEN %d" % id
+        self.process_action(action)
 
     def lock(self, block):
-        self.actions.append("LOCK %d %s" % (self.id, block))
-        # print("[CAR %d]: locking block %s" % (self.id, block))
-        # send_message("LOCK %d %s" % (self.id, block))
+        action = "LOCK %d %s" % (self.id, block)
+        self.process_action(action)
 
     def move(self, block):
-        self.actions.append("MOVE %d %s" % (self.id, block))
-        # print("[CAR %d]: moving to block %s" % (self.id, block))
-        # send_message("MOVE %d %s" % (self.id, block))
+        action = "MOVE %d %s" % (self.id, block)
+        self.process_action(action)
 
     def release(self, block):
-        self.actions.append("RELEASE %d %s" % (self.id, block))
-        # print("[CAR %d]: releasing block %s" % (self.id, block))
-        # send_message("RELEASE %d %s" % (self.id, block))
+        action = "RELEASE %d %s" % (self.id, block)
+        self.process_action(action)
 
     def straight(self):
-        if self.id == 1 or self.id == 5:
+        if self.lane_id == 1:
             self.lock("cz1")
             self.lock("cz3")
             self.pass_token(self.next_id)
@@ -79,7 +80,7 @@ class Car():
             self.release("cz1")
             self.move("ez")
             self.release("cz3")
-        if self.id == 2 or self.id == 6:
+        if self.lane_id == 2:
             self.lock("cz2")
             self.lock("cz1")
             self.pass_token(self.next_id)
@@ -88,7 +89,7 @@ class Car():
             self.release("cz2")
             self.move("ez")
             self.release("cz1")
-        if self.id == 3 or self.id == 7:
+        if self.lane_id == 3:
             self.lock("cz4")
             self.lock("cz2")
             self.pass_token(self.next_id)
@@ -97,7 +98,7 @@ class Car():
             self.release("cz4")
             self.move("ez")
             self.release("cz2")
-        if self.id == 4 or self.id == 8:
+        if self.lane_id == 4:
             self.lock("cz3")
             self.lock("cz4")
             self.pass_token(self.next_id)
@@ -108,30 +109,35 @@ class Car():
             self.release("cz4")
 
     def turn_right(self):
-        if self.id == 1 or self.id == 5:
+        if self.lane_id == 1:
             self.lock("cz1")
             self.pass_token(self.next_id)
             self.move("cz1")
+            self.actions.append("TURNRIGHT %d" % self.id)
             self.move("ez")
             self.release("cz1")
-        elif self.id == 2 or self.id == 6:
+        elif self.lane_id == 2:
             self.lock("cz2")
             self.pass_token(self.next_id)
             self.move("cz2")
+            self.actions.append("TURNRIGHT %d" % self.id)
             self.move("ez")
             self.release("cz2")
-        elif self.id == 3 or self.id == 7:
+        elif self.lane_id == 3:
             self.lock("cz4")
             self.pass_token(self.next_id)
             self.move("cz4")
+            self.actions.append("TURNRIGHT %d" % self.id)
             self.move("ez")
             self.release("cz4")
-        elif self.id == 4 or self.id == 8:
+        elif self.lane_id == 4:
             self.lock("cz3")
             self.pass_token(self.next_id)
             self.move("cz3")
+            self.actions.append("TURNRIGHT %d" % self.id)
             self.move("ez")
             self.release("cz3")
+
 
 car = None
 
@@ -146,23 +152,8 @@ def on_message(client, userdata, msg):
         return
 
     if action == "TAKESTEP":
-        if car.current_action < len(car.actions):
-            if car.state in [Status.MAIN, Status.QUEUED, Status.PASSING]:
-                log(message)
-
-            current_action = car.actions[car.current_action]
-            act_split = current_action.split(' ')
-            if act_split[0] == "LOCK":
-                log("CHECK LOCK STATUS FOR %s" % act_split[2])
-                lock_state = car.cz_status[act_split[2]]
-                if lock_state:
-                    log("%s locked" % act_split[2])
-                    return
-            elif act_split[0] == "MOVE" and act_split[2] == "ez":
-                car.state = Status.PARKED
-
-            send_message(car.actions[car.current_action])
-            car.current_action = car.current_action + 1
+        if car.auto_pilot is False:
+            car.take_action()
 
     elif action == "LOCK":
         block = splits[5]
@@ -223,22 +214,13 @@ def main():
         # car 1 starts with the token
         car.pass_token(car.id)
 
-    # enter QZ after random delay
-    # delay = 1 + (random.random() * 8)
-    # if car.id == 1:
-    #    delay = delay + 5
-    # log("delaying %f seconds before entering queue" % delay)
-    # time.sleep(delay)
-    # car.state = Status.QUEUED
-
     while True:
-        # 10% chance for car to enter QZ
+        # 20% chance for car to enter QZ
         if car.state == Status.MAIN:
-            if random.randint(0, 10) == 10:
+            if random.randint(1, 10) <= 2:
                 car.state = Status.QUEUED
 
-
-        if car.auto_pilot and car.state in [Status.QUEUED, Status.PASSING, Status.PARKED]:
+        if car.auto_pilot:
             car.take_action()
 
         time.sleep(1)
