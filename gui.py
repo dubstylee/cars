@@ -240,7 +240,7 @@ class ICS(tk.Frame):
             return
         laneid = carinfo[0];
         actualIndex = carinfo[1]*4 + carinfo[2] 
-        newKey = (laneid+1)%4
+        newKey = (laneid%4)+1
         print newKey
         photo = self.imagesForLanes[newKey]
         self.labels[actualIndex].config(image=photo)
