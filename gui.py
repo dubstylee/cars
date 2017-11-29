@@ -200,9 +200,8 @@ class ICS(tk.Frame):
             newLocation = (laneId, nextPos[0], nextPos[1])
             self.carLocationLookup[carid]=newLocation
             nextstep = self.revczlookup[nextPos]
-            steps = self.currentAction.cget("text")
-            steps = steps + ":" + "MOVE %d %s" %(carid, nextstep) 
-            self.currentAction.config(text=steps)
+            step = "MOVE %d %s" %(carid, nextstep) 
+            self.currentAction.config(text=step)
              
         elif czNextPos[0] == -1 and czNextPos[1] == -1 :
             prevIndex = currPos[0]*numLanes + currPos[1]
@@ -234,12 +233,27 @@ class ICS(tk.Frame):
         self.labels[actualIndex].config(image=photo)
         self.carLocationLookup[carid] = (laneid, initpos[0], initpos[1]) 
 
+    def turnRight(self, message) :
+        carid = int(message)
+        carinfo = self.carLocationLookup.get(carid)
+        if carinfo == None :
+            return
+        laneid = carinfo[0];
+        actualIndex = carinfo[1]*4 + carinfo[2] 
+        newKey = (laneid+1)%4
+        print newKey
+        photo = self.imagesForLanes[newKey]
+        self.labels[actualIndex].config(image=photo)
+
+
 def on_message(client, userdata, msg):
     message = msg.payload
     print message
     split = message.split(" ", 4)
     if split[3] == "MOVE" :
         ics.takeStep(message)
+    elif split[3] == "TURNRIGHT" :
+        ics.turnRight(split[4])
     elif split[3] == "LABELA" :
         ics.updateAssertLabel(split[4])
     elif split[3] == "LABELB" :
