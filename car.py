@@ -110,6 +110,60 @@ class Car():
             self.move("ez")
             self.release("cz4")
 
+    def turn_left(self):
+        if self.lane_id == 1:
+            self.lock("cz1")
+            self.lock("cz3")
+            self.lock("cz4")
+            self.pass_token(self.next_id)
+            self.move("cz1")
+            self.move("cz3")
+            self.release("cz1")
+            self.actions.append("TURNLEFT %d" % self.id)
+            self.move("cz4")
+            self.release("cz3")
+            self.move("ez")
+            self.release("cz4")
+        elif self.lane_id == 2:
+            self.lock("cz2")
+            self.lock("cz1")
+            self.lock("cz3")
+            self.pass_token(self.next_id)
+            self.move("cz2")
+            self.actions.append("TURNLEFT %d" % self.id)
+            self.move("cz1")
+            self.release("cz2")
+            self.move("cz3")
+            self.release("cz1")
+            self.move("ez")
+            self.release("cz3")
+        elif self.lane_id == 3:
+            self.lock("cz4")
+            self.lock("cz2")
+            self.lock("cz1")
+            self.pass_token(self.next_id)
+            self.move("cz4")
+            self.actions.append("TURNLEFT %d" % self.id)
+            self.move("cz2")
+            self.release("cz4")
+            self.move("cz1")
+            self.release("cz2")
+            self.move("ez")
+            self.release("cz1")
+        elif self.lane_id == 4:
+            self.lock("cz3")
+            self.lock("cz4")
+            self.lock("cz2")
+            self.pass_token(self.next_id)
+            self.move("cz3")
+            self.actions.append("TURNLEFT %d" % self.id)
+            self.move("cz4")
+            self.release("cz3")
+            self.move("cz2")
+            self.release("cz4")
+            self.move("ez")
+            self.release("cz2")
+
     def turn_right(self):
         if self.lane_id == 1:
             self.lock("cz1")
@@ -186,14 +240,18 @@ def on_message(client, userdata, msg):
                 # go straight
                 log("GOING STRAIGHT")
                 car.straight()
-            else:
+            elif random.random() * 100 > 50:
                 # turn right
                 log("TURNING RIGHT")
                 car.turn_right()
+            else:
+                # turn left
+                log("TURNING LEFT")
+                car.turn_left()
 
             car.state = Status.PASSING
             car.take_action()
- 
+
 
 def log(message):
     print("[CAR %d]: %s" % (car.id, message))
