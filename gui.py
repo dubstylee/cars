@@ -37,7 +37,7 @@ class ICS(tk.Frame):
     }    
 
     # For Car (lane, currentrow, currentrow)
-    carLocationLookup = None
+    carLocationLookup = {}
 
     # For Move actions, should use as a verification
     # for carLocationLookup after step
@@ -64,13 +64,6 @@ class ICS(tk.Frame):
         self.initgui(4)
 
     def initgui(self, numLanes) :
-        self.carLocationLookup =  {
-            1 : (1, 0, 1),
-            2 : (2, 1, 3),
-            3 : (3, 3, 2),
-            4 : (4, 2, 0)
-        }
-
         self.topFrame = tk.Frame()
         self.topFrame.grid(row=1, sticky='NSEW')
 
@@ -104,14 +97,14 @@ class ICS(tk.Frame):
                 label.grid(row=i, column=j, sticky='NSEW')
                 self.labels.append(label)
 
-        # Lane logic
+        # Lane logic, init the array with images for lanes.
+        # Easy lookup later using the map provided the lane id as the key.
         for key, value in self.laneinfolookup.iteritems() :
             actualIndex = value[0]*numLanes + value[1]
             image = Image.open("orangecar.bmp")
             resized = image.resize((100,100), Image.ANTIALIAS)
             rotated = resized.rotate(value[2]);
             photo = ImageTk.PhotoImage(rotated)            
-            self.labels[actualIndex].config(image=photo)
             self.imagesForLanes[key] = photo
 
         self.currentAction =  tk.Label(self.carGridFrame, text = "Current Action", 
@@ -175,7 +168,6 @@ class ICS(tk.Frame):
             self.propertyState = "invalid"
             self.propertyLabel.config(text="Property Violated", bg="red")
 
-
     def takeStep(self, message) :
         numLanes = 4
         # Code to move the cars one step ahead
@@ -220,8 +212,27 @@ class ICS(tk.Frame):
             steps = self.currentAction.cget("text")
             steps = steps + ":" + "EXIT %d" %carid 
             self.currentAction.config(text=steps)
+
         else :
             print "Error occured while moving one block"
+
+    def putCarInLane(self, carParams) :
+        split = carParams.split(" ")
+        carid = int(split[0])
+        laneid = int(split[1])
+  
+        print carid
+        print laneid
+
+        laneinfo = self.laneinfolookup[laneid]
+        initpos = (laneinfo[0], laneinfo[1])
+        actualIndex = initpos[0]*4 + initpos[1]
+  
+        print actualIndex
+       
+        photo = self.imagesForLanes[laneid]
+        self.labels[actualIndex].config(image=photo)
+        self.carLocationLookup[carid] = (laneid, initpos[0], initpos[1]) 
 
 def on_message(client, userdata, msg):
     message = msg.payload
@@ -236,7 +247,10 @@ def on_message(client, userdata, msg):
     elif split[3] == "UPDATEA" and ics.assertState == "valid" :
         ics.updateAssertText(split[4]);
     elif split[3] == "UPDATEB" and ics.propertyState == "valid" :
-        ics.updatePropertyText(split[4]); 
+        ics.updatePropertyText(split[4]);
+    elif split[3] == "ENTER" :
+        #Case where a new vehicle arrives
+        ics.putCarInLane(split[4])
 
 ics = None
 

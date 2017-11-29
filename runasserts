@@ -1,0 +1,4 @@
+python assertlockbeforemove.py 1 1 2 5 6 &
+python assertlockbeforemove.py 2 2 3 6 7 &
+python assertlockbeforemove.py 3 1 4 5 8 &
+python assertlockbeforemove.py 4 3 4 7 8 &
