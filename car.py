@@ -177,6 +177,7 @@ def on_message(client, userdata, msg):
         elif car.state == Status.PASSING:
             # we are already in the CZ, check for convoy?
             # log("check lane %d for convoy" % car.lane_id)
+            log("passing token to %d" % car.next_id)
             car.pass_token(car.next_id)
         elif car.state == Status.QUEUED:
             # print(message)
