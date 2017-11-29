@@ -49,13 +49,13 @@ class ICS(tk.Frame):
       "cz4" : (2,2),
       "ez"  : (-1,-1)
     }
+
     revczlookup = {
       (1,1) : "cz1",
       (1,2) : "cz2",
       (2,1) : "cz3",
       (2,2) : "cz4"
     }
-
  
     def cleargui(self) :
         self.topFrame.destroy()
@@ -178,8 +178,6 @@ class ICS(tk.Frame):
         carInfo = self.carLocationLookup.get(carid)
         laneId = carInfo[0]
         currPos = (carInfo[1], carInfo[2])
-        print "Expected %d %d " %(czNextPos[0], czNextPos[1])
-        print "Current %d %d " %(currPos[0], currPos[1]) 
         nextPos = None
         if laneId == 1 :
             nextPos = (currPos[0] + 1, currPos[1])
@@ -189,7 +187,7 @@ class ICS(tk.Frame):
             nextPos = (currPos[0] - 1, currPos[1])
         elif laneId == 4 :
             nextPos = (currPos[0], currPos[1] + 1)
-        print "Calculated %d %d " %(nextPos[0], nextPos[1]) 
+ 
         if czNextPos[0] == nextPos[0] and czNextPos[1] == nextPos[1] :
             # Fetch the relevant labels, change images
             prevIndex = currPos[0]*numLanes + currPos[1]
@@ -219,41 +217,39 @@ class ICS(tk.Frame):
         split = carParams.split(" ")
         carid = int(split[0])
         laneid = int(split[1])
-  
-        print carid
-        print laneid
-
         laneinfo = self.laneinfolookup[laneid]
         initpos = (laneinfo[0], laneinfo[1])
         actualIndex = initpos[0]*4 + initpos[1]
-  
-        print actualIndex
-       
         photo = self.imagesForLanes[laneid]
         self.labels[actualIndex].config(image=photo)
         self.carLocationLookup[carid] = (laneid, initpos[0], initpos[1]) 
 
-    def turnRight(self, message) :
-        carid = int(message)
+    def takeTurn(self, turnmessage, caridstr) :
+        carid = int(caridstr)
         carinfo = self.carLocationLookup.get(carid)
         if carinfo == None :
             return
         laneid = carinfo[0];
-        actualIndex = carinfo[1]*4 + carinfo[2] 
-        newKey = (laneid%4)+1
-        print newKey
-        photo = self.imagesForLanes[newKey]
-        self.labels[actualIndex].config(image=photo)
-
-
+        actualIndex = carinfo[1]*4 + carinfo[2]
+        if turnmessage == "TURNRIGHT" :
+            newlane = (laneid%4)+1
+            photo = self.imagesForLanes[newlane]
+            self.labels[actualIndex].config(image=photo)
+        elif turnmessage == "TURNLEFT" :
+            newlane = ((laneid-1)%4)
+            if newlane == 0 :
+               newlane = 4
+            photo = self.imagesForLanes[newlane]
+            self.labels[actualIndex].config(image=photo)
+            self.carLocationLookup[carid] = (newlane, carinfo[1], carinfo[2])
+           
 def on_message(client, userdata, msg):
     message = msg.payload
-    print message
     split = message.split(" ", 4)
     if split[3] == "MOVE" :
         ics.takeStep(message)
-    elif split[3] == "TURNRIGHT" :
-        ics.turnRight(split[4])
+    elif split[3] == "TURNRIGHT" or split[3] == "TURNLEFT":
+        ics.takeTurn(split[3],split[4])
     elif split[3] == "LABELA" :
         ics.updateAssertLabel(split[4])
     elif split[3] == "LABELB" :
