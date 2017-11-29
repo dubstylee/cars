@@ -15,31 +15,43 @@ GET_CZ = (when (LID == 1) straight -> cz1.lock -> cz3.lock -> pass_token[NID] ->
                           cz3.release -> EXIT_CZ
          |when (LID == 1) right_turn -> cz1.lock -> pass_token[NID] -> move.cz1 ->
                           move.qz -> cz1.release -> EXIT_CZ
+         |when (LID == 1) left_turn -> cz1.lock -> cz3.lock -> cz4.lock -> pass_token[NID] ->
+                          move.cz1 -> move.cz3 -> cz1.release -> move.cz4 -> cz3.release ->
+                          move.qz -> cz4.release -> EXIT_CZ
          |when (LID == 2) straight -> cz2.lock -> cz1.lock -> pass_token[NID] ->
                           move.cz2 -> move.cz1 -> cz2.release -> move.qz ->
                           cz1.release -> EXIT_CZ
          |when (LID == 2) right_turn -> cz2.lock -> pass_token[NID] -> move.cz2 ->
                           move.qz -> cz2.release -> EXIT_CZ
+         |when (LID == 2) left_turn -> cz2.lock -> cz1.lock -> cz3.lock -> pass_token[NID] ->
+                          move.cz2 -> move.cz1 -> cz2.release -> move.cz3 -> cz1.release ->
+                          move.qz -> cz3.release -> EXIT_CZ
          |when (LID == 3) straight -> cz4.lock -> cz2.lock -> pass_token[NID] ->
                           move.cz4 -> move.cz2 -> cz4.release -> move.qz ->
                           cz2.release -> EXIT_CZ
          |when (LID == 3) right_turn -> cz4.lock -> pass_token[NID] -> move.cz4 ->
                           move.qz -> cz4.release -> EXIT_CZ
+         |when (LID == 3) left_turn -> cz4.lock -> cz2.lock -> cz1.lock -> pass_token[NID] ->
+                          move.cz4 -> move.cz2 -> cz4.release -> move.cz1 -> cz2.release ->
+                          move.qz -> cz1.release -> EXIT_CZ
          |when (LID == 4) straight -> cz3.lock -> cz4.lock -> pass_token[NID] ->
                           move.cz3 -> move.cz4 -> cz3.release -> move.qz ->
                           cz4.release -> EXIT_CZ
          |when (LID == 4) right_turn -> cz3.lock -> pass_token[NID] -> move.cz3 ->
-                          move.qz -> cz3.release -> EXIT_CZ),
+                          move.qz -> cz3.release -> EXIT_CZ
+         |when (LID == 4) left_turn -> cz3.lock -> cz4.lock -> cz2.lock -> pass_token[NID] ->
+                          move.cz3 -> move.cz4 -> cz3.release -> move.cz2 -> cz4.release ->
+                          move.qz -> cz2.release -> EXIT_CZ),
 EXIT_CZ = (park -> EXIT_CZ
           |pass_token[ID] -> EXIT_CZ).
 
-||LANE1 = (car[1]:CAR(1,1,2) || car[5]:CAR(5,1,6) || car[{[1],[2],[5],[6]}].cz1::CZ)
+||LANE1 = (car[1]:CAR(1,1,2) || car[5]:CAR(5,1,6) || car[{[1],[2],[3],[5],[6],[7]}].cz1::CZ)
         / {start / car[{[1],[5]}].start}.
-||LANE2 = (car[2]:CAR(2,2,3) || car[6]:CAR(6,2,7) || car[{[2],[3],[6],[7]}].cz2::CZ)
+||LANE2 = (car[2]:CAR(2,2,3) || car[6]:CAR(6,2,7) || car[{[2],[3],[4],[6],[7],[8]}].cz2::CZ)
         / {start / car[{[2],[6]}].start}.
-||LANE3 = (car[3]:CAR(3,3,4) || car[7]:CAR(7,3,8) || car[{[3],[4],[7],[8]}].cz4::CZ)
+||LANE3 = (car[3]:CAR(3,3,4) || car[7]:CAR(7,3,8) || car[{[1],[3],[4],[5],[7],[8]}].cz4::CZ)
         / {start / car[{[3],[7]}].start}.
-||LANE4 = (car[4]:CAR(4,4,5) || car[8]:CAR(8,4,1) || car[{[4],[1],[5],[8]}].cz3::CZ)
+||LANE4 = (car[4]:CAR(4,4,5) || car[8]:CAR(8,4,1) || car[{[4],[1],[2],[5],[6],[8]}].cz3::CZ)
         / {start / car[{[4],[8]}].start}.
 ||CARS = (LANE1 || LANE2 || LANE3 || LANE4)
        / {pass_token / car[Cars].pass_token}.
@@ -51,14 +63,14 @@ fluent CZ3_LOCK[c:Cars] = <car[c].cz3.lock, car[c].cz3.release>
 fluent CZ4_LOCK[c:Cars] = <car[c].cz4.lock, car[c].cz4.release>
 
 assert SAFE_CZ1_1 = [](!car[1].move.cz1 W CZ1_LOCK[1])
-assert SAFE_CZ1 = (forall [c:{[1],[2],[5],[6]}] (!car[c].move.cz1 W CZ1_LOCK[c]))
-assert SAFE_CZ2 = (forall [c:{[2],[3],[6],[7]}] (!car[c].move.cz2 W CZ2_LOCK[c]))
-assert SAFE_CZ3 = (forall [c:{[1],[4],[5],[8]}] (!car[c].move.cz3 W CZ3_LOCK[c]))
-assert SAFE_CZ4 = (forall [c:{[3],[4],[7],[8]}] (!car[c].move.cz4 W CZ4_LOCK[c]))
+assert SAFE_CZ1 = (forall [c:{[1],[2],[3],[5],[6],[7]}] (!car[c].move.cz1 W CZ1_LOCK[c]))
+assert SAFE_CZ2 = (forall [c:{[2],[3],[4],[6],[7],[8]}] (!car[c].move.cz2 W CZ2_LOCK[c]))
+assert SAFE_CZ3 = (forall [c:{[1],[2],[4],[5],[6],[8]}] (!car[c].move.cz3 W CZ3_LOCK[c]))
+assert SAFE_CZ4 = (forall [c:{[1],[3],[4],[5],[7],[8]}] (!car[c].move.cz4 W CZ4_LOCK[c]))
 
 assert ALL_GET_TOKEN = (forall [c:Cars] <> car[c].get_token)
 
-property LOCK_MOVE_RELEASE = (car[c:{[1],[2],[5],[6]}].cz1.lock -> car[c].move.cz1 ->
+property LOCK_MOVE_RELEASE = (car[c:{[1],[2],[3],[5],[6],[7]}].cz1.lock -> car[c].move.cz1 ->
                               car[c].cz1.release -> LOCK_MOVE_RELEASE).
 
 ||INTERSECTION = (CARS || LOCK_MOVE_RELEASE).
