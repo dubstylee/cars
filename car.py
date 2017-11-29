@@ -53,7 +53,7 @@ class Car():
             self.current_action = self.current_action + 1
 
             # after releasing the lock, go ahead and take the next action
-            if act_split[0] == "RELEASE":
+            if act_split[0] in ["RELEASE","LOCK","TOKEN"]:
                 self.take_action()
 
     def pass_token(self, id):
@@ -192,7 +192,8 @@ def on_message(client, userdata, msg):
                 car.turn_right()
 
             car.state = Status.PASSING
-
+            car.take_action()
+ 
 
 def log(message):
     print("[CAR %d]: %s" % (car.id, message))
@@ -218,9 +219,9 @@ def main():
     while True:
         # 20% chance for car to enter QZ
         if car.state == Status.MAIN:
-            if random.randint(1, 10) <= 2:
-                send_message("ENTER %d %d" % (car.id, car.lane_id))
-                car.state = Status.QUEUED
+            #if random.randint(1, 10) <= 2:
+            send_message("ENTER %d %d" % (car.id, car.lane_id))
+            car.state = Status.QUEUED
 
         if car.auto_pilot:
             car.take_action()
