@@ -116,11 +116,11 @@ class ICS(tk.Frame):
         assertFrame.config(highlightthickness=2, 
                                 highlightbackground="black", 
                                 highlightcolor="black")
-        assertLabel = tk.Label(assertFrame, width =80)
-        assertLabel.config(text="", bg="green")
-        assertLabel.pack()
-        assertText = tk.Listbox(assertFrame, height= 39,width=80)
-        assertText.pack()
+        self.assertLabel = tk.Label(assertFrame, width =80)
+        self.assertLabel.config(text="", bg="green")
+        self.assertLabel.pack()
+        self.assertText = tk.Listbox(assertFrame, height= 39,width=80)
+        self.assertText.pack()
 
         self.bottomFrame.config(highlightthickness=2, 
                                 highlightbackground="black", 
