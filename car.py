@@ -176,7 +176,7 @@ def on_message(client, userdata, msg):
             car.pass_token(car.next_id)
         elif car.state == Status.PASSING:
             # we are already in the CZ, check for convoy?
-            log("check lane %d for convoy" % car.lane_id)
+            # log("check lane %d for convoy" % car.lane_id)
             car.pass_token(car.next_id)
         elif car.state == Status.QUEUED:
             # print(message)
@@ -218,6 +218,7 @@ def main():
         # 20% chance for car to enter QZ
         if car.state == Status.MAIN:
             if random.randint(1, 10) <= 2:
+                send_message("ENTER %d %d" % (car.id, car.lane_id))
                 car.state = Status.QUEUED
 
         if car.auto_pilot:
