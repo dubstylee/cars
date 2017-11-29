@@ -44,6 +44,8 @@ class Car():
                 if lock_state:
                     log("%s locked" % act_split[2])
                     return
+            elif act_split[0] == "TOKEN":
+                log("passing token to %d" % int(act_split[1]))
             elif act_split[0] == "MOVE" and act_split[2] == "ez":
                 self.state = Status.PARKED
 
@@ -172,12 +174,10 @@ def on_message(client, userdata, msg):
 
         if car.state in [Status.MAIN, Status.PARKED]:
             # pass the token along to next car
-            log("passing token to %d" % car.next_id)
             car.pass_token(car.next_id)
         elif car.state == Status.PASSING:
             # we are already in the CZ, check for convoy?
             # log("check lane %d for convoy" % car.lane_id)
-            log("passing token to %d" % car.next_id)
             car.pass_token(car.next_id)
         elif car.state == Status.QUEUED:
             # print(message)
