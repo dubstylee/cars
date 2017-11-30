@@ -5,7 +5,7 @@ from PIL import Image, ImageTk
 from enum import Enum
 from shared import mqtt_client, mqtt_topic, exit_program, control_c_handler, send_message
 
-# TODO : Add code to handle cars exiting through EZ
+# TODO : Add code to handle multiple cars in a lane
 
 # Intersection Control System GUI (ICS)
 signal.signal(signal.SIGINT, control_c_handler)
@@ -29,8 +29,6 @@ class ICS(tk.Frame):
     propertyText  = None
     propertyState = "valid"    
 
-    imagesForLanes = {}
-
     # For Lanes (initrow, initcolumn, orientation)
     laneinfolookup = {
       1 : (0,1, 180),
@@ -39,26 +37,23 @@ class ICS(tk.Frame):
       4 : (2,0, 270)
     }    
 
-    # For Car (lane, currentrow, currentrow)
-    carLocationLookup = {}
-
-    # For Move actions, should use as a verification
-    # for carLocationLookup after step
-    # For CZ {id:(row, column)}
-    czlookup = {
-      "cz1" : (1,1),
-      "cz2" : (1,2),
-      "cz3" : (2,1),
-      "cz4" : (2,2),
-      "ez"  : (-1,-1)
-    }
-
+    #Used by the UI to fill the Grid values
     revczlookup = {
       (1,1) : "cz1",
       (1,2) : "cz2",
       (2,1) : "cz3",
       (2,2) : "cz4"
-    } 
+    }
+
+    #For tracking is the entering car is to be placed in the QZ.
+    initspotstatus = {}
+    carswaiting = {}
+
+    #For storing objects of images to be used by lanes
+    imagesForLanes = {}
+
+    #For Car (lane, currentrow, currentrow)
+    carLocationLookup = {}
     
     #To track which cars are exiting lanes.
     exitqueue = []
@@ -67,6 +62,11 @@ class ICS(tk.Frame):
         self.topFrame.destroy()
         self.bottomFrame.destroy()
         del self.labels[:]
+        del self.exitqueue[:]
+        self.carLocationLookup = {}
+        self.lanequeue = {}
+        self.initspotstatus = {}
+        self.carswaiting= {}
         self.initgui(4)
 
     def initgui(self, numLanes) :
@@ -223,19 +223,54 @@ class ICS(tk.Frame):
         self.currentAction.config(text=nextstep)
         # Add a queue for cars exiting the Lanes
         # Clear the queue in the next click of 'TakeStep'
+        laneinfo = self.laneinfolookup[laneId]
         if czid == "ez" :
             self.exitqueue.append(carid);
+        if laneinfo[0] == currPos[0] and laneinfo[1] == currPos[1] :
+            # Case where the car is moving from the init tile.
+            waitingcarid = self.carswaiting.get(laneId)
+            if waitingcarid != None :
+                # Case for moving
+                waitpos = (currPos[0], currPos[1])
+                if laneId == 1 :
+                    waitpos = (waitpos[0], waitpos[1] - 1)
+                elif laneId == 2 :
+                    waitpos = (waitpos[0] - 1, waitpos[1])
+                elif laneId == 3 :
+                    waitpos = (waitpos[0], waitpos[1] + 1)
+                elif laneId == 4 :
+                    waitpos = (waitpos[0] + 1, waitpos[1])
+                waitIndex = waitpos[0]*numLanes + waitpos[1]
+                self.labels[prevIndex].config(image=photo)
+                self.labels[waitIndex].config(image='')
+                self.carLocationLookup[waitingcarid]=carInfo
+            else :
+                # Case for just resetting
+                self.initspotstatus[laneId] = True
 
     def putCarInLane(self, carParams) :
         split = carParams.split(" ")
         carid = int(split[0])
         laneid = int(split[1])
+        spotfree = self.initspotstatus.get(laneid)
         laneinfo = self.laneinfolookup[laneid]
-        initpos = (laneinfo[0], laneinfo[1])
+        initpos = (laneinfo[0], laneinfo[1]) 
+        if spotfree == None or spotfree == True :
+            self.initspotstatus[laneid] = False
+        elif spotfree == False : 
+            self.carswaiting[laneid] = carid
+            if laneid == 1 :
+                initpos = (initpos[0], initpos[1] - 1)
+            elif laneid == 2 :
+                initpos = (initpos[0] - 1, initpos[1])
+            elif laneid == 3 :
+                initpos = (initpos[0], initpos[1] + 1)
+            elif laneid == 4 :
+                initpos = (initpos[0] + 1, initpos[1])
         actualIndex = initpos[0]*4 + initpos[1]
         photo = self.imagesForLanes[laneid]
         self.labels[actualIndex].config(image=photo)
-        self.carLocationLookup[carid] = (laneid, initpos[0], initpos[1]) 
+        self.carLocationLookup[carid] = (laneid, initpos[0], initpos[1])            
 
     def takeTurn(self, turnmessage, caridstr) :
         carid = int(caridstr)
