@@ -230,6 +230,8 @@ class ICS(tk.Frame):
             # Case where the car is moving from the init tile.
             waitingcarid = self.carswaiting.get(laneId)
             if waitingcarid != None :
+                #print "Waiting :::::::::: %d" %waitingcarid
+                del self.carswaiting[laneId]
                 # Case for moving
                 waitpos = (currPos[0], currPos[1])
                 if laneId == 1 :
@@ -240,10 +242,15 @@ class ICS(tk.Frame):
                     waitpos = (waitpos[0], waitpos[1] + 1)
                 elif laneId == 4 :
                     waitpos = (waitpos[0] + 1, waitpos[1])
+                #print "Init : %d %d" %(currPos[0], currPos[1])
+                #print "Wait : %d %d" %(waitpos[0], waitpos[1])
+                photo = self.imagesForLanes[laneId] 
                 waitIndex = waitpos[0]*numLanes + waitpos[1]
                 self.labels[prevIndex].config(image=photo)
                 self.labels[waitIndex].config(image='')
-                self.carLocationLookup[waitingcarid]=carInfo
+                #print "Prev Index %d" %prevIndex
+                #print "Wait Index %d" %waitIndex
+                self.carLocationLookup[waitingcarid]=(laneId, currPos[0], currPos[1])
             else :
                 # Case for just resetting
                 self.initspotstatus[laneId] = True
@@ -295,6 +302,7 @@ class ICS(tk.Frame):
 def on_message(client, userdata, msg):
     global autopilot
     message = msg.payload
+    #print message
     split = message.split(" ", 4)
     if split[3] == "MOVE" :
         if autopilot :
