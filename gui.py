@@ -248,6 +248,7 @@ class ICS(tk.Frame):
             newlane = (laneid%4)+1
             photo = self.imagesForLanes[newlane]
             self.labels[actualIndex].config(image=photo)
+            self.carLocationLookup[carid] = (newlane, carinfo[1], carinfo[2]) 
         elif turnmessage == "TURNLEFT" :
             newlane = ((laneid-1)%4)
             if newlane == 0 :
