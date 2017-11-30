@@ -1,5 +1,6 @@
 import Tkinter as tk
 import signal
+import sys
 from PIL import Image, ImageTk
 from enum import Enum
 from shared import mqtt_client, mqtt_topic, exit_program, control_c_handler, send_message
@@ -8,6 +9,8 @@ from shared import mqtt_client, mqtt_topic, exit_program, control_c_handler, sen
 
 # Intersection Control System GUI (ICS)
 signal.signal(signal.SIGINT, control_c_handler)
+
+autopilot = False
 
 class ICS(tk.Frame):
     labels = []
@@ -55,8 +58,11 @@ class ICS(tk.Frame):
       (1,2) : "cz2",
       (2,1) : "cz3",
       (2,2) : "cz4"
-    }
- 
+    } 
+    
+    #To track which cars are exiting lanes.
+    exitqueue = []
+
     def cleargui(self) :
         self.topFrame.destroy()
         self.bottomFrame.destroy()
@@ -138,8 +144,22 @@ class ICS(tk.Frame):
         clearButton.pack(side=tk.BOTTOM)
 
     def sendTakeStep(self) :
-        self.currentAction.config(text='')
-        send_message("TAKESTEP")
+        global autopilot
+        if len(self.exitqueue) == 0 :
+            self.currentAction.config(text='')
+        else :
+            actions = ""
+            for carid in self.exitqueue :
+                actions = "%s;EXIT %d" %(actions, carid)
+                carinfo = self.carLocationLookup.get(carid)
+                if carinfo != None :
+                    carIndex = carinfo[1]*4 + carinfo[2]
+                    self.labels[carIndex].config(image='')
+                    del self.carLocationLookup[carid]
+            del self.exitqueue[:]
+            self.currentAction.config(text=actions)
+        if not autopilot :
+            send_message("TAKESTEP")
 
     def __init__(self, master, numLanes) :
         tk.Frame.__init__(self, master)
@@ -168,14 +188,15 @@ class ICS(tk.Frame):
             self.propertyState = "invalid"
             self.propertyLabel.config(text="Property Violated", bg="red")
 
-    def takeStep(self, message) :
+    def takeStep(self, params) :
         numLanes = 4
         # Code to move the cars one step ahead
-        split = message.split(" ");
-        carid = int (split[4])
-        czid = split[5]
-        czNextPos = self.czlookup.get(czid)
+        split = params.split(" ");
+        carid = int (split[0])
+        czid = split[1]
         carInfo = self.carLocationLookup.get(carid)
+        if carInfo == None :
+            return
         laneId = carInfo[0]
         currPos = (carInfo[1], carInfo[2])
         nextPos = None
@@ -187,31 +208,23 @@ class ICS(tk.Frame):
             nextPos = (currPos[0] - 1, currPos[1])
         elif laneId == 4 :
             nextPos = (currPos[0], currPos[1] + 1)
- 
-        if czNextPos[0] == nextPos[0] and czNextPos[1] == nextPos[1] :
-            # Fetch the relevant labels, change images
-            prevIndex = currPos[0]*numLanes + currPos[1]
-            nextIndex = nextPos[0]*numLanes + nextPos[1]
-            photo = self.imagesForLanes[laneId]
-            self.labels[prevIndex].config(image='')
-            self.labels[nextIndex].config(image=photo)
-            newLocation = (laneId, nextPos[0], nextPos[1])
-            self.carLocationLookup[carid]=newLocation
-            nextstep = self.revczlookup[nextPos]
-            step = "MOVE %d %s" %(carid, nextstep) 
-            self.currentAction.config(text=step)
-             
-        elif czNextPos[0] == -1 and czNextPos[1] == -1 :
-            prevIndex = currPos[0]*numLanes + currPos[1]
-            self.labels[prevIndex].config(image='')
-            newLocation = (-1, -1, -1)
-            self.carLocationLookup[carid]=newLocation
-            steps = self.currentAction.cget("text")
-            steps = steps + ":" + "EXIT %d" %carid 
-            self.currentAction.config(text=steps)
-
-        else :
-            print "Error occured while moving one block"
+        # Fetch the relevant labels, change images
+        prevIndex = currPos[0]*numLanes + currPos[1]
+        nextIndex = nextPos[0]*numLanes + nextPos[1]
+        photo = self.imagesForLanes[laneId]
+        self.labels[prevIndex].config(image='')
+        self.labels[nextIndex].config(image=photo)
+        newLocation = (laneId, nextPos[0], nextPos[1])
+        self.carLocationLookup[carid]=newLocation
+        # Keep appending to nextstep, till the 'TakeStep'
+        # button is pressed.
+        prevstep =  self.currentAction.cget("text")
+        nextstep = "%s:MOVE %d %s" %(prevstep, carid, czid)
+        self.currentAction.config(text=nextstep)
+        # Add a queue for cars exiting the Lanes
+        # Clear the queue in the next click of 'TakeStep'
+        if czid == "ez" :
+            self.exitqueue.append(carid);
 
     def putCarInLane(self, carParams) :
         split = carParams.split(" ")
@@ -244,10 +257,13 @@ class ICS(tk.Frame):
             self.carLocationLookup[carid] = (newlane, carinfo[1], carinfo[2])
            
 def on_message(client, userdata, msg):
+    global autopilot
     message = msg.payload
     split = message.split(" ", 4)
     if split[3] == "MOVE" :
-        ics.takeStep(message)
+        if autopilot :
+            ics.sendTakeStep()
+        ics.takeStep(split[4])
     elif split[3] == "TURNRIGHT" or split[3] == "TURNLEFT":
         ics.takeTurn(split[3],split[4])
     elif split[3] == "LABELA" :
@@ -266,8 +282,12 @@ ics = None
 
 def main():
     global ics
+    global autopilot
     root = tk.Tk()
     ics = ICS(root, 4)
+
+    if(len(sys.argv) > 1) :
+        autopilot = True
 
     mqtt_client.will_set(mqtt_topic, '___Will of GUI___', 0, False)
     mqtt_client.on_message = on_message
