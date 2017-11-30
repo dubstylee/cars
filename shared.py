@@ -10,7 +10,7 @@ from datetime import datetime as dt
 LOG_ACTIONS       = (1 << 0)
 LOG_MQTT_MESSAGES = (1 << 1)
 # LOG_LEVEL         = (LOG_ACTIONS | LOG_MQTT_MESSAGES)
-LOG_LEVEL         = 0
+LOG_LEVEL         = LOG_ACTIONS
 
 # for leds
 ON = 0
