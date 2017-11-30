@@ -3,8 +3,16 @@ from enum import Enum
 import sys
 import time
 
+mraaAvail = True
+
+try :
+    import mraa
+except ImportError:
+    mraaAvail = False
+
 Fluents = {}
 trackczid = None
+assertLED = None
 
 class FluentStatus(Enum) :
     ON = 1
@@ -13,16 +21,33 @@ class FluentStatus(Enum) :
 class Fluent() :
     status = FluentStatus.OFF
     identifier = 0
+    fluentLED = None
 
     def __init__(self, param) :
+        global mraaAvail
         self.identifier = param
+        if mraaAvail :
+            fluentLED = mraa.Gpio((identifier*2)-1)
+            fluentLED.dir(mraa.DIR_OUT)
+            fluentLED.write(OFF)
 
     def checkFluent(self, message) :
         # Add LED stuff here
         if message == "LOCK" :
             self.status = FluentStatus.ON
+            if mraaAvail :
+                fluentLED.write(ON)
         elif message == "RELEASE" :
             self.status = FluentStatus.OFF
+            if mraaAvail :
+                fluentLED.write(OFF)
+
+def exit_program() :
+    global assertLED
+    if mraaAvail :
+        assertLED.write(OFF)
+        for fluent in Fluents.values() :
+            fluent.fluentLED.write(OFF)
 
 def on_message(client, userdata, msg) :
     global trackczid
@@ -49,7 +74,12 @@ def on_message(client, userdata, msg) :
 def main() :
     global trackczid
     global Fluents
+    global mraaAvail
+    global assertLED
     numParams = len(sys.argv)
+
+    if not mraaAvail :
+        print "mraa is not available, not operating over LEDs"
 
     if numParams < 3 :
         print "Invalid number of arguments, usage : " \
@@ -65,6 +95,10 @@ def main() :
     mqtt_client.loop_start()
 
     send_message("LABELA Assert lock before move for lane %s" %trackczid)
+    if mraaAvail :
+        assertLED = mraa.Gpio(i)
+        assertLED.dir(mraa.DIR_OUT)
+        led.write(ON)
 
     while True :
         time.sleep(1)
