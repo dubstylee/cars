@@ -1,5 +1,6 @@
 from enum import Enum
-from shared import mqtt_client, mqtt_topic, send_message, exit_program, LOG_LEVEL, LOG_ACTIONS
+from shared import mqtt_client, mqtt_topic, send_message, exit_program, \
+                   LOG_LEVEL, LOG_ACTIONS
 import random
 import sys
 import time
@@ -53,7 +54,7 @@ class Car():
             self.current_action = self.current_action + 1
 
             # after releasing the lock, go ahead and take the next action
-            if act_split[0] in ["RELEASE","LOCK","TOKEN"]:
+            if act_split[0] in ["RELEASE", "LOCK", "TOKEN"]:
                 self.take_action()
 
     def pass_token(self, id):
