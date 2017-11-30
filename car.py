@@ -1,5 +1,5 @@
 from enum import Enum
-from shared import mqtt_client, mqtt_topic, send_message, exit_program
+from shared import mqtt_client, mqtt_topic, send_message, exit_program, LOG_LEVEL, LOG_ACTIONS
 import random
 import sys
 import time
@@ -254,7 +254,8 @@ def on_message(client, userdata, msg):
 
 
 def log(message):
-    print("[CAR %d]: %s" % (car.id, message))
+    if LOG_LEVEL & LOG_ACTIONS:
+        print("[CAR %d]: %s" % (car.id, message))
 
 
 def main():

@@ -6,6 +6,12 @@ import signal
 from datetime import datetime as dt
 
 
+# for logging
+LOG_ACTIONS       = (1 << 0)
+LOG_MQTT_MESSAGES = (1 << 1)
+# LOG_LEVEL         = (LOG_ACTIONS | LOG_MQTT_MESSAGES)
+LOG_LEVEL         = 0
+
 # for leds
 ON = 0
 OFF = 1
@@ -50,6 +56,8 @@ def send_message(message):
     timestamp = dt.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S.%f')
     mqtt_client.publish(mqtt_topic, "[%s] %s %s" %
                         (timestamp, ip_addr, message))
+    if LOG_LEVEL & LOG_MQTT_MESSAGES:
+        print(message)
 
 
 signal.signal(signal.SIGINT, control_c_handler)
