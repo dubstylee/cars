@@ -43,16 +43,14 @@ class Fluent() :
         global fuentLED
         if message == "LOCK" :
             self.status = FluentStatus.ON
-            if mraaAvail :
-                fluentLED.write(ON)
         elif message == "RELEASE" :
             self.status = FluentStatus.OFF
-            if mraaAvail :
-                fluentLED.write(OFF)
 
 def on_message(client, userdata, msg) :
     global trackczid
     global Fluents
+    global fluentLED
+    global assertLED
     message = msg.payload
     split = message.split(" ")
     if split[3] == "LOCK" or split[3] == "RELEASE" :
@@ -71,6 +69,14 @@ def on_message(client, userdata, msg) :
         fluent = Fluents.get(carid, None)
         if fluent != None and fluent.status != FluentStatus.ON :
             send_message("ASSERT FAILURE")
+            assertLED.write(OFF)
+            fluentLED.write(OFF)
+            exit_program()
+    fluentLED.write(OFF)
+    for key, value in Fluents.iteritems() :
+        if value.status == FluentStatus.ON :
+            fluentLED.write(ON)
+            break
 
 def main() :
     global trackczid
