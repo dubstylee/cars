@@ -4,8 +4,6 @@ import signal
 import sys
 import time
 
-signal.signal(signal.SIGINT, control_c_handler)
-
 mraaAvail = True
 
 try :
@@ -104,7 +102,6 @@ def main() :
     assertLEDid = (czid - 1)*2 + 2
     fluentLEDid = (assertLEDid + 1) + 2
     send_message("LABELA Assert lock before move for lane %s" %trackczid)
-    print "Dealing with LEDs"
     if mraaAvail :
         assertLED = mraa.Gpio(assertLEDid)
         assertLED.dir(mraa.DIR_OUT)
