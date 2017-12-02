@@ -64,7 +64,6 @@ class ICS(tk.Frame):
         del self.labels[:]
         del self.exitqueue[:]
         self.carLocationLookup = {}
-        self.lanequeue = {}
         self.initspotstatus = {}
         self.carswaiting= {}
         self.initgui(4)
@@ -298,11 +297,38 @@ class ICS(tk.Frame):
             photo = self.imagesForLanes[newlane]
             self.labels[actualIndex].config(image=photo)
             self.carLocationLookup[carid] = (newlane, carinfo[1], carinfo[2])
-           
+
+    def updateWaitingQueue(self, tokenParam) :
+        carid = int(tokenParam)
+        carinfo = self.carLocationLookup.get(carid)
+        if carinfo == None :
+          return
+        laneid = carinfo[0]
+        waitingcarid = self.carswaiting.get(laneid)
+        if waitingcarid == None or waitingcarid != carid :
+          return
+        # How to get the id of the car on which this car is waiting on?
+        keys = self.carLocationLookup.keys()
+        for key in keys :
+            value = self.carLocationLookup[key]
+            if key != carid and value[0] == laneid :
+                print "swapping because of TOKEN : %d" %(carid)
+                # This is the case where we need to swap
+                # To swap, you only need to swap the carids
+                # in the waiting map and the car lookup map
+                swapcarinfo = self.carLocationLookup.get(key)
+                print "Swap info %d : (%d, %d, %d)" %(key, swapcarinfo[0], swapcarinfo[1], swapcarinfo[2])
+                print "With info %d : (%d, %d, %d)" %(carid, carinfo[0], carinfo[1], carinfo[2]) 
+                self.carLocationLookup[key] = carinfo
+                self.carLocationLookup[carid] = swapcarinfo
+                # This is the car that entered first but has no token
+                self.carswaiting[laneid] = key
+                break
+                
 def on_message(client, userdata, msg):
     global autopilot
     message = msg.payload
-    #print message
+    # print message
     split = message.split(" ", 4)
     if split[3] == "MOVE" :
         if autopilot :
@@ -319,8 +345,12 @@ def on_message(client, userdata, msg):
     elif split[3] == "UPDATEB" and ics.propertyState == "valid" :
         ics.updatePropertyText(split[4]);
     elif split[3] == "ENTER" :
-        #Case where a new vehicle arrives
+        # Case where a new vehicle arrives
         ics.putCarInLane(split[4])
+    elif split[3] == "TOKEN" :
+        # Check if the waiting car gets the token first.
+        # Whichever car gets the token first gets to cut in line.
+        ics.updateWaitingQueue(split[4])
 
 ics = None
 
