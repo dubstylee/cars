@@ -29,6 +29,8 @@ class ICS(tk.Frame):
     propertyText  = None
     propertyState = "valid"    
 
+    efficiencyLabel = None
+
     # For Lanes (initrow, initcolumn, orientation)
     laneinfolookup = {
       1 : (0,1, 180),
@@ -126,6 +128,9 @@ class ICS(tk.Frame):
         self.assertLabel.pack()
         self.assertText = tk.Listbox(assertFrame, height= 39,width=80)
         self.assertText.pack()
+
+        self.efficiencyLabel = tk.Label(self.topFrame, font="Verdana 12 bold")
+        self.efficiencyLabel.grid(row = 2, column = 1, columnspan = 2)
 
         self.bottomFrame.config(highlightthickness=2, 
                                 highlightbackground="black", 
@@ -324,7 +329,15 @@ class ICS(tk.Frame):
                 # This is the car that entered first but has no token
                 self.carswaiting[laneid] = key
                 break
-                
+
+    def reportEfficiency(self, effText) :
+        split = effText.split(" ")
+        freeCZ = int(split[0])
+        avgfreeCZ = float(split[1])
+        labelText = "Free CZs : %d, Avg. Free CZs : %f" %(freeCZ, avgfreeCZ)
+        self.efficiencyLabel.config(text=labelText)
+
+
 def on_message(client, userdata, msg):
     global autopilot
     message = msg.payload
@@ -351,6 +364,8 @@ def on_message(client, userdata, msg):
         # Check if the waiting car gets the token first.
         # Whichever car gets the token first gets to cut in line.
         ics.updateWaitingQueue(split[4])
+    elif split[3] == "VACANT" :
+        ics.reportEfficiency(split[4])
 
 ics = None
 
