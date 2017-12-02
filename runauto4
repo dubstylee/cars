@@ -2,3 +2,4 @@ python car.py 1 1 2 auto &
 python car.py 2 2 3 auto &
 python car.py 3 3 4 auto &
 python car.py 4 4 1 auto &
+python monitor.py &

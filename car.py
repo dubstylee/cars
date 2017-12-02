@@ -280,8 +280,8 @@ def main():
 
     while True:
         if car.state == Status.MAIN:
-            # 30% chance for car to enter QZ
-            # if random.randint(1, 10) <= 3:
+            # 50% chance for car to enter QZ
+            # if random.randint(1, 10) <= 5:
             send_message("ENTER %d %d" % (car.id, car.lane_id))
             car.state = Status.QUEUED
         elif car.auto_pilot and car.state == Status.PARKED:

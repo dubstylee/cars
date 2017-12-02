@@ -1,12 +1,13 @@
 from shared import mqtt_client, send_message
 import time
 
-NUM_CARS = 8
+NUM_CARS = 4
 ON = False
 
 occupied = {"cz1": None, "cz2": None, "cz3": None, "cz4": None}
 occupying = {}
 empty_counts = []
+exit_count = 0
 
 # populate occupying dictionary (car 1 occupying cz1, for example)
 for i in range(NUM_CARS + 1):
@@ -14,7 +15,9 @@ for i in range(NUM_CARS + 1):
 
 
 def on_message(client, userdata, msg):
+    global NUM_CARS
     global ON
+    global exit_count
     message = msg.payload
     splits = message.split(' ')
     action = splits[3]
@@ -35,6 +38,9 @@ def on_message(client, userdata, msg):
         if cz_id != "ez" and occupied[cz_id] is not None:
             print("That space is already occupied!")
             return
+
+        if cz_id == "ez":
+            exit_count = exit_count + 1
 
         if occupying[car_id] is not None:
             old_cz = occupying[car_id]
@@ -70,7 +76,9 @@ def check_occupied():
         if car is None:
             empty = empty + 1
 
-    empty_counts.append(empty)
+    if exit_count < NUM_CARS:
+        empty_counts.append(empty)
+
     sum_counts = float(sum(empty_counts))
     len_counts = len(empty_counts)
     print("VACANT %d %f" % (empty, sum_counts / len_counts))
