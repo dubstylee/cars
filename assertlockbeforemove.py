@@ -4,6 +4,8 @@ import signal
 import sys
 import time
 
+signal.signal(signal.SIGINT, control_c_handler)
+
 mraaAvail = True
 
 try :
@@ -27,8 +29,6 @@ def control_c_handler(signum, frame) :
     exit_program()
 
 signal.signal(signal.SIGINT, control_c_handler)
-
-
 
 class FluentStatus(Enum) :
     ON = 1
@@ -103,7 +103,6 @@ def main() :
     #The trailing 2 is added because the LEDs are indexed from 2 to 9
     assertLEDid = (czid - 1)*2 + 2
     fluentLEDid = (assertLEDid + 1) + 2
-
     send_message("LABELA Assert lock before move for lane %s" %trackczid)
     print "Dealing with LEDs"
     if mraaAvail :
