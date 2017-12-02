@@ -43,34 +43,43 @@ class Fluent() :
         global fuentLED
         if message == "LOCK" :
             self.status = FluentStatus.ON
-            if mraaAvail :
-                fluentLED.write(ON)
         elif message == "RELEASE" :
             self.status = FluentStatus.OFF
-            if mraaAvail :
-                fluentLED.write(OFF)
 
 def on_message(client, userdata, msg) :
     global trackczid
     global Fluents
+    global fluentLED
+    global assertLED
     message = msg.payload
     split = message.split(" ")
+    if split[3] not in ["LOCK", "RELEASE", "MOVE"] :
+        return
+    carid = int(split[4])
+    czid = split[5]
+    if(trackczid != czid) : 
+        return
+ 
     if split[3] == "LOCK" or split[3] == "RELEASE" :
-        czid = split[5]
-        if(trackczid != czid) : 
-            return
-        carid = int(split[4])
         fluent = Fluents.get(carid, None)
         if fluent != None :
             fluent.checkFluent(split[3])
     elif split[3] == "MOVE" :
-        czid = split[5]
-        if(trackczid != czid) :
-            return 
-        carid = int(split[4])
         fluent = Fluents.get(carid, None)
         if fluent != None and fluent.status != FluentStatus.ON :
             send_message("ASSERT FAILURE")
+            assertLED.write(OFF)
+            fluentLED.write(OFF)
+            exit_program()
+
+    if mraaAvail :
+        fluentLED.write(OFF)
+    for key, value in Fluents.iteritems() :
+        if value.status == FluentStatus.ON :
+            print "LED for %s" %trackczid
+            if mraaAvail :
+                fluentLED.write(ON)
+            break
 
 def main() :
     global trackczid
@@ -99,14 +108,15 @@ def main() :
     mqtt_client.loop_start()
 
     #The trailing 2 is added because the LEDs are indexed from 2 to 9
-    assertLEDid = (czid - 1)*2 + 2
-    fluentLEDid = (assertLEDid + 1) + 2
+    assertLEDid = (czid - 1)*2
+    fluentLEDid = (assertLEDid + 1)
+    print "Assert LED : %d %d" %(assertLEDid, fluentLEDid)
     send_message("LABELA Assert lock before move for lane %s" %trackczid)
     if mraaAvail :
-        assertLED = mraa.Gpio(assertLEDid)
+        assertLED = mraa.Gpio(assertLEDid + 2)
         assertLED.dir(mraa.DIR_OUT)
         assertLED.write(ON)
-        fluentLED = mraa.Gpio(fluentLEDid)
+        fluentLED = mraa.Gpio(fluentLEDid + 2)
         fluentLED.dir(mraa.DIR_OUT)
         fluentLED.write(OFF)
 
