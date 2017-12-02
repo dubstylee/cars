@@ -1,7 +1,10 @@
-from shared import mqtt_client, mqtt_topic, send_message, exit_program
+from shared import mqtt_client, control_c_handler, mqtt_topic, send_message, exit_program, ON, OFF
 from enum import Enum
+import signal
 import sys
 import time
+
+signal.signal(signal.SIGINT, control_c_handler)
 
 mraaAvail = True
 
@@ -15,6 +18,14 @@ Fluents = {}
 trackczid = None
 assertLED = None
 fluentLED = None
+
+def exit_program() :
+    print "exiting program"
+    global assertLED
+    global fluentLED
+    if mraaAvail :
+        assertLED.write(OFF)
+        fluentLED.write(OFF)
 
 class FluentStatus(Enum) :
     ON = 1
@@ -37,13 +48,6 @@ class Fluent() :
             self.status = FluentStatus.OFF
             if mraaAvail :
                 fluentLED.write(OFF)
-
-def exit_program() :
-    global assertLED
-    if mraaAvail :
-        assertLED.write(OFF)
-        for fluent in Fluents.values() :
-            fluent.fluentLED.write(OFF)
 
 def on_message(client, userdata, msg) :
     global trackczid
@@ -95,8 +99,10 @@ def main() :
 
     assertLEDid = (czid - 1)*2
     fluentLEDid = assertLEDid + 1
+    print "Running : %d %d" %(assertLEDid, fluentLEDid)
 
     send_message("LABELA Assert lock before move for lane %s" %trackczid)
+    print "Dealing with LEDs"
     if mraaAvail :
         assertLED = mraa.Gpio(assertLEDid)
         assertLED.dir(mraa.DIR_OUT)
