@@ -6,3 +6,5 @@ python car.py 5 1 6 &
 python car.py 6 2 7 &
 python car.py 7 3 8 &
 python car.py 8 4 1 &
+python monitor.py &
+
