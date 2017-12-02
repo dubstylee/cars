@@ -56,6 +56,8 @@ class Car():
             # after releasing the lock, go ahead and take the next action
             if act_split[0] in ["RELEASE", "LOCK", "TOKEN"]:
                 self.take_action()
+            elif act_split[0] == "MOVE" and act_split[1] == "ez":
+                self.take_action()
 
     def pass_token(self, id):
         action = "TOKEN %d" % id
@@ -237,11 +239,11 @@ def on_message(client, userdata, msg):
         elif car.state == Status.QUEUED:
             # print(message)
             # lock our blocks then pass the token
-            if random.random() * 100 > 50:
+            if random.random() * 100 >= 50:
                 # go straight
                 log("GOING STRAIGHT")
                 car.straight()
-            elif random.random() * 100 > 50:
+            elif random.random() * 100 >= 50:
                 # turn right
                 log("TURNING RIGHT")
                 car.turn_right()
