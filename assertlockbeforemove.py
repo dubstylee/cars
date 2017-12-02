@@ -11,8 +11,10 @@ except ImportError:
     mraaAvail = False
 
 Fluents = {}
+
 trackczid = None
 assertLED = None
+fluentLED = None
 
 class FluentStatus(Enum) :
     ON = 1
@@ -21,18 +23,12 @@ class FluentStatus(Enum) :
 class Fluent() :
     status = FluentStatus.OFF
     identifier = 0
-    fluentLED = None
 
     def __init__(self, param) :
-        global mraaAvail
         self.identifier = param
-        if mraaAvail :
-            fluentLED = mraa.Gpio((identifier*2)-1)
-            fluentLED.dir(mraa.DIR_OUT)
-            fluentLED.write(OFF)
 
     def checkFluent(self, message) :
-        # Add LED stuff here
+        global fuentLED
         if message == "LOCK" :
             self.status = FluentStatus.ON
             if mraaAvail :
@@ -76,6 +72,7 @@ def main() :
     global Fluents
     global mraaAvail
     global assertLED
+    global fluentLED
     numParams = len(sys.argv)
 
     if not mraaAvail :
@@ -86,7 +83,9 @@ def main() :
               "python assertlockbeforemove.py <laneid> <carids> ..."
         exit_program()
 
-    trackczid = "cz%d" %int(sys.argv[1])
+    czid = int(sys.argv[1])
+    trackczid = "cz%d" %czid
+ 
     for i in range(2, numParams) :
         Fluents[int(sys.argv[i])] = Fluent(int(sys.argv[i]))
 
@@ -94,11 +93,17 @@ def main() :
     mqtt_client.will_set(mqtt_topic, "Will of Assert\n\n", 0, False)
     mqtt_client.loop_start()
 
+    assertLEDid = (czid - 1)*2
+    fluentLEDid = assertLEDid + 1
+
     send_message("LABELA Assert lock before move for lane %s" %trackczid)
     if mraaAvail :
-        assertLED = mraa.Gpio(i)
+        assertLED = mraa.Gpio(assertLEDid)
         assertLED.dir(mraa.DIR_OUT)
-        led.write(ON)
+        assertLED.write(ON)
+        fluentLED = mraa.Gpio(fluentLEDid)
+        fluentLED.dir(mraa.DIR_OUT)
+        fluentLED.write(OFF)
 
     while True :
         time.sleep(1)
