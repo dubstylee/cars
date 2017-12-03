@@ -128,7 +128,7 @@ def main() :
     while True :
         if not failed :
             time.sleep(1)
-        else
+        else :
             exit_program()
 
 if __name__ == "__main__":
