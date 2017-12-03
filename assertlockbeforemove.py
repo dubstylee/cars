@@ -6,6 +6,7 @@ import time
 
 mraaAvail = True
 failed = False
+assertName = False
 
 try :
     import mraa
@@ -53,6 +54,7 @@ def on_message(client, userdata, msg) :
     global fluentLED
     global assertLED
     global failed
+    global mraaAvail
     message = msg.payload
     split = message.split(" ")
     if split[3] not in ["LOCK", "RELEASE", "MOVE"] :
@@ -64,17 +66,18 @@ def on_message(client, userdata, msg) :
     if split[3] == "LOCK" or split[3] == "RELEASE" :
         fluent = Fluents.get(carid, None)
         if fluent != None :
-            send_message("UPDATEA %s" %message)
+            send_message("UPDATEA %s %s %s : %s %s %s" %(split[0], split[1], assertName, split[3], split[4], split[5]))
             fluent.checkFluent(split[3])
     elif split[3] == "MOVE" :
         fluent = Fluents.get(carid, None)
         if fluent != None :
-            send_message("UPDATEA %s" %message)
+            send_message("UPDATEA %s %s %s : %s %s %s" %(split[0], split[1], assertName, split[3], split[4], split[5]))
             if fluent.status != FluentStatus.ON :
                 failed = True
-                send_message("UPDATEA ASSERT FAILURE")
-                assertLED.write(OFF)
-                fluentLED.write(OFF)
+                send_message("UPDATEA %s : ASSERT FAILURE" %assertName)
+                if mraaAvail :
+                    assertLED.write(OFF)
+                    fluentLED.write(OFF)
 
     if mraaAvail :
         fluentLED.write(OFF)
@@ -91,6 +94,7 @@ def main() :
     global assertLED
     global fluentLED
     global failed
+    global assertName
     numParams = len(sys.argv)
 
     if not mraaAvail :
@@ -103,7 +107,8 @@ def main() :
 
     czid = int(sys.argv[1])
     trackczid = "cz%d" %czid
- 
+    assertName = "LOCK_BEFORE_MOVE %s" %trackczid
+
     for i in range(2, numParams) :
         Fluents[int(sys.argv[i])] = Fluent(int(sys.argv[i]))
 
@@ -114,7 +119,7 @@ def main() :
     #The trailing 2 is added because the LEDs are indexed from 2 to 9
     assertLEDid = (czid - 1)*2
     fluentLEDid = (assertLEDid + 1)
-    send_message("LABELA Assert lock before move for lane %s" %trackczid)
+    send_message("LABELA LOCK BEFORE MOVE : %s" %trackczid)
     if mraaAvail :
         assertLED = mraa.Gpio(assertLEDid + 2)
         assertLED.dir(mraa.DIR_OUT)
@@ -126,7 +131,7 @@ def main() :
     while True :
         if not failed :
             time.sleep(1)
-        else 
+        else : 
             time.sleep(5)
             exit_program()
 if __name__ == "__main__":
