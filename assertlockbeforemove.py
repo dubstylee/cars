@@ -5,6 +5,7 @@ import sys
 import time
 
 mraaAvail = True
+failed = False
 
 try :
     import mraa
@@ -51,6 +52,7 @@ def on_message(client, userdata, msg) :
     global Fluents
     global fluentLED
     global assertLED
+    global failed
     message = msg.payload
     split = message.split(" ")
     if split[3] not in ["LOCK", "RELEASE", "MOVE"] :
@@ -58,21 +60,21 @@ def on_message(client, userdata, msg) :
     carid = int(split[4])
     czid = split[5]
     if(trackczid != czid) : 
-        return 
+        return
     if split[3] == "LOCK" or split[3] == "RELEASE" :
         fluent = Fluents.get(carid, None)
         if fluent != None :
-            send_message("UPDATEA %s", message) 
+            send_message("UPDATEA %s" %message)
             fluent.checkFluent(split[3])
     elif split[3] == "MOVE" :
         fluent = Fluents.get(carid, None)
         if fluent != None :
-            send_message("UPDATEA %s", message)
+            send_message("UPDATEA %s" % message)
             if fluent.status != FluentStatus.ON :
+                failed = True
                 send_message("ASSERT FAILURE")
                 assertLED.write(OFF)
                 fluentLED.write(OFF)
-                exit_program()
 
     if mraaAvail :
         fluentLED.write(OFF)
@@ -89,6 +91,7 @@ def main() :
     global mraaAvail
     global assertLED
     global fluentLED
+    global failed
     numParams = len(sys.argv)
 
     if not mraaAvail :
@@ -123,7 +126,10 @@ def main() :
         fluentLED.write(OFF)
 
     while True :
-        time.sleep(1)
+        if not failed :
+            time.sleep(1)
+        else
+            exit_program()
 
 if __name__ == "__main__":
     main()
