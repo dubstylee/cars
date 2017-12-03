@@ -317,13 +317,10 @@ class ICS(tk.Frame):
         for key in keys :
             value = self.carLocationLookup[key]
             if key != carid and value[0] == laneid :
-                print "swapping because of TOKEN : %d" %(carid)
                 # This is the case where we need to swap
                 # To swap, you only need to swap the carids
                 # in the waiting map and the car lookup map
                 swapcarinfo = self.carLocationLookup.get(key)
-                print "Swap info %d : (%d, %d, %d)" %(key, swapcarinfo[0], swapcarinfo[1], swapcarinfo[2])
-                print "With info %d : (%d, %d, %d)" %(carid, carinfo[0], carinfo[1], carinfo[2]) 
                 self.carLocationLookup[key] = carinfo
                 self.carLocationLookup[carid] = swapcarinfo
                 # This is the car that entered first but has no token
@@ -341,7 +338,6 @@ class ICS(tk.Frame):
 def on_message(client, userdata, msg):
     global autopilot
     message = msg.payload
-    # print message
     split = message.split(" ", 4)
     if split[3] == "MOVE" :
         if autopilot :

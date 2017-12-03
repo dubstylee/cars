@@ -69,10 +69,10 @@ def on_message(client, userdata, msg) :
     elif split[3] == "MOVE" :
         fluent = Fluents.get(carid, None)
         if fluent != None :
-            send_message("UPDATEA %s" % message)
+            send_message("UPDATEA %s" %message)
             if fluent.status != FluentStatus.ON :
                 failed = True
-                send_message("ASSERT FAILURE")
+                send_message("UPDATEA ASSERT FAILURE")
                 assertLED.write(OFF)
                 fluentLED.write(OFF)
 
@@ -80,7 +80,6 @@ def on_message(client, userdata, msg) :
         fluentLED.write(OFF)
     for key, value in Fluents.iteritems() :
         if value.status == FluentStatus.ON :
-            print "LED for %s" %trackczid
             if mraaAvail :
                 fluentLED.write(ON)
             break
@@ -115,7 +114,6 @@ def main() :
     #The trailing 2 is added because the LEDs are indexed from 2 to 9
     assertLEDid = (czid - 1)*2
     fluentLEDid = (assertLEDid + 1)
-    print "Assert LED : %d %d" %(assertLEDid, fluentLEDid)
     send_message("LABELA Assert lock before move for lane %s" %trackczid)
     if mraaAvail :
         assertLED = mraa.Gpio(assertLEDid + 2)
@@ -128,8 +126,8 @@ def main() :
     while True :
         if not failed :
             time.sleep(1)
-        else :
+        else 
+            time.sleep(5)
             exit_program()
-
 if __name__ == "__main__":
     main()
