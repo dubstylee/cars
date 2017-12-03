@@ -69,6 +69,7 @@ class ICS(tk.Frame):
         self.initspotstatus = {}
         self.carswaiting= {}
         self.initgui(4)
+        send_message("RESETGUI")
 
     def initgui(self, numLanes) :
         self.topFrame = tk.Frame()
