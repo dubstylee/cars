@@ -58,19 +58,21 @@ def on_message(client, userdata, msg) :
     carid = int(split[4])
     czid = split[5]
     if(trackczid != czid) : 
-        return
- 
+        return 
     if split[3] == "LOCK" or split[3] == "RELEASE" :
         fluent = Fluents.get(carid, None)
         if fluent != None :
+            send_message("UPDATEA %s", message) 
             fluent.checkFluent(split[3])
     elif split[3] == "MOVE" :
         fluent = Fluents.get(carid, None)
-        if fluent != None and fluent.status != FluentStatus.ON :
-            send_message("ASSERT FAILURE")
-            assertLED.write(OFF)
-            fluentLED.write(OFF)
-            exit_program()
+        if fluent != None :
+            send_message("UPDATEA %s", message)
+            if fluent.status != FluentStatus.ON :
+                send_message("ASSERT FAILURE")
+                assertLED.write(OFF)
+                fluentLED.write(OFF)
+                exit_program()
 
     if mraaAvail :
         fluentLED.write(OFF)
