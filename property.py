@@ -75,6 +75,13 @@ def on_message(client, userdata, msg):
     if action in ["LABELA", "LABELB", "UPDATEA", "UPDATEB"]:
         return
 
+    if action == "RESETGUI":
+        for p in property_list:
+            p.status = 0
+            p.cur_val = 0
+        update_properties()
+        return
+
     found = False
     for p in property_list:
         found_inner = False

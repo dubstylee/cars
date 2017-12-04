@@ -210,7 +210,13 @@ def on_message(client, userdata, msg):
     if action in ["LABELA", "LABELB", "UPDATEA", "UPDATEB"]:
         return
 
-    if action == "TAKESTEP":
+    if action == "RESETGUI":
+        car.actions = []
+        car.state = Status.MAIN
+        if car.id == 1:
+            car.pass_token(car.id)
+
+    elif action == "TAKESTEP":
         if car.auto_pilot is False:
             car.take_action()
 

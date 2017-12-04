@@ -1,3 +1,4 @@
+python property.py &
 python monitor.py &
 python car.py 1 1 2 &
 python car.py 2 2 3 &

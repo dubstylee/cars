@@ -23,10 +23,18 @@ def on_message(client, userdata, msg):
     action = splits[3]
 
     # only care about ENTER, MOVE, EXIT, TAKESTEP
-    if action not in ["ENTER", "MOVE", "EXIT", "TAKESTEP"]:
+    if action not in ["ENTER", "MOVE", "EXIT", "TAKESTEP", "RESETGUI"]:
         return
 
-    if action == "TAKESTEP":
+    if action == "RESETGUI":
+        empty_counts = []
+        exit_count = 0
+        for cz, car in occupied.iteritems():
+            occupied[cz] = None
+        for i in range(len(occupying)):
+            occupying[str(i)] = None
+        ON = False
+    elif action == "TAKESTEP":
         if ON:
             check_occupied()
         else:
