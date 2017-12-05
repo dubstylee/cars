@@ -1,5 +1,6 @@
-from shared import mqtt_client, send_message
+from shared import miqtt_client, send_message
 import time
+import sys
 
 NUM_CARS = 4
 ON = False
@@ -95,6 +96,10 @@ def check_occupied():
 
 
 def main():
+    global NUM_CARS
+    if len(sys.argv) == 2
+        NUM_CARS = int(sys.argv[1])
+
     mqtt_client.on_message = on_message
     mqtt_client.loop_start()
 

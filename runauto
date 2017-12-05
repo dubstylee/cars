@@ -6,4 +6,4 @@ python car.py 5 1 6 auto &
 python car.py 6 2 7 auto &
 python car.py 7 3 8 auto &
 python car.py 8 4 1 auto &
-python monitor.py &
+python monitor.py 8 &
