@@ -45,11 +45,11 @@ GET_CZ = (when (LID == 1) straight -> cz1.lock -> cz3.lock -> pass_token[NID] ->
 EXIT_CZ = (park -> EXIT_CZ
           |pass_token[ID] -> EXIT_CZ).
 
-||LANE1 = (car[1]:CAR(1,1,2) || car[5]:CAR(5,1,6) || car[{[1],[2],[3],[5],[6],[7]}].cz1::CZ)
+||LANE1 = (car[1]:CAR(1,1,3) || car[5]:CAR(5,1,7) || car[{[1],[2],[3],[5],[6],[7]}].cz1::CZ)
         / {start / car[{[1],[5]}].start}.
-||LANE2 = (car[2]:CAR(2,2,3) || car[6]:CAR(6,2,7) || car[{[2],[3],[4],[6],[7],[8]}].cz2::CZ)
+||LANE2 = (car[2]:CAR(2,2,4) || car[6]:CAR(6,2,8) || car[{[2],[3],[4],[6],[7],[8]}].cz2::CZ)
         / {start / car[{[2],[6]}].start}.
-||LANE3 = (car[3]:CAR(3,3,4) || car[7]:CAR(7,3,8) || car[{[1],[3],[4],[5],[7],[8]}].cz4::CZ)
+||LANE3 = (car[3]:CAR(3,3,2) || car[7]:CAR(7,3,6) || car[{[1],[3],[4],[5],[7],[8]}].cz4::CZ)
         / {start / car[{[3],[7]}].start}.
 ||LANE4 = (car[4]:CAR(4,4,5) || car[8]:CAR(8,4,1) || car[{[4],[1],[2],[5],[6],[8]}].cz3::CZ)
         / {start / car[{[4],[8]}].start}.
