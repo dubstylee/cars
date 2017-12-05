@@ -97,7 +97,7 @@ def check_occupied():
 
 def main():
     global NUM_CARS
-    if len(sys.argv) == 2
+    if len(sys.argv) == 2 :
         NUM_CARS = int(sys.argv[1])
 
     mqtt_client.on_message = on_message
