@@ -257,14 +257,15 @@ def on_message(client, userdata, msg):
                 # go straight
                 log("GOING STRAIGHT")
                 car.straight()
-            elif random.random() * 100 >= 50:
+            #elif random.random() * 100 >= 50:
+            else :
                 # turn right
                 log("TURNING RIGHT")
                 car.turn_right()
-            else:
-                # turn left
-                log("TURNING LEFT")
-                car.turn_left()
+            #else:
+            #    # turn left
+            #    log("TURNING LEFT")
+            #    car.turn_left()
 
             car.state = Status.PASSING
             car.take_action()
