@@ -220,12 +220,12 @@ def on_message(client, userdata, msg):
 
         if car.id == 1:
             car.pass_token(car.id)
-            print("CUR: %d : %s" % (car.current_action, car.actions))
+            # print("CUR: %d : %s" % (car.current_action, car.actions))
 
     elif action == "TAKESTEP":
         if car.auto_pilot is False:
-            if car.id == 1:
-                print("CUR: %d : %s" % (car.current_action, car.actions))
+            # if car.id == 1:
+            #     print("CUR: %d : %s" % (car.current_action, car.actions))
             car.take_action()
 
     elif action == "LOCK":
