@@ -48,6 +48,24 @@ class Fluent() :
         elif message == "RELEASE" :
             self.status = FluentStatus.OFF
 
+def reset() :
+    global assertLED
+    global fluentLED
+    global failed
+    global Fluents
+    global mraaAvail
+    global trackczid
+    if mraaAvail :
+        assertLED.write(ON)
+        fluentLED.write(OFF)
+    keys = Fluents.keys()
+    for key in keys :
+        fluent = Fluents[key]
+        fluent.status = FluentStatus.OFF
+        Fluents[key] = fluent
+    send_message("LABELA LOCK BEFORE MOVE : %s" %trackczid)
+ 
+
 def on_message(client, userdata, msg) :
     global trackczid
     global Fluents
@@ -57,6 +75,8 @@ def on_message(client, userdata, msg) :
     global mraaAvail
     message = msg.payload
     split = message.split(" ")
+    if split[3] == "RESETGUI" :
+        reset()
     if split[3] not in ["LOCK", "RELEASE", "MOVE"] :
         return
     carid = int(split[4])
