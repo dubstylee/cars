@@ -17,6 +17,7 @@ for i in range(NUM_CARS + 1):
 def on_message(client, userdata, msg):
     global NUM_CARS
     global ON
+    global empty_counts
     global exit_count
     message = msg.payload
     splits = message.split(' ')

@@ -72,7 +72,10 @@ def on_message(client, userdata, msg):
     action = splits[3]
 
     # ignore gui actions
-    if action in ["LABELA", "LABELB", "UPDATEA", "UPDATEB"]:
+    if action.startswith("LABELA") or \
+       action.startswith("LABELB") or \
+       action.startswith("UPDATEA") or \
+       action.startswith("UPDATEB"):
         return
 
     if action == "RESETGUI":
@@ -82,19 +85,25 @@ def on_message(client, userdata, msg):
         update_properties()
         return
 
+    print(action)
+
     found = False
     for p in property_list:
         found_inner = False
         actions = p.alphabet
-        for i in range(0, len(actions)):
+        tmp_val = 0
+
+        for i in range(len(actions)):
             if actions[i][0] == splits[3]:
+                # print("matched action")
                 new_action = actions[i][0]
                 found_inner = True
                 break
             elif "#" in actions[i][0]:
-                new_action = actions[i][0].replace("#", str(p.cur_val))
                 if p.cur_val != 0:
-                    if new_action == splits[3]:
+                    new_action = actions[i][0].replace("#", str(p.cur_val))
+                    if new_action == action:
+                        # print("matched with substitution")
                         found_inner = True
                         break
                 else:
@@ -102,18 +111,23 @@ def on_message(client, userdata, msg):
                     splits_split = splits[3].split(' ')
                     for j in range(len(actions_split)):
                         if actions_split[j] == "#":
-                            p.cur_val = int(splits_split[j])
+                            tmp_val = int(splits_split[j])
                             break
                         elif actions_split[j] != splits_split[j]:
                             # not a match, break out of inner loop
+                            # print("%s != %s" % (action, actions[i][0]))
                             break
 
-                    new_action = actions[i][0].replace("#", str(p.cur_val))
-                    if new_action == splits[3]:
+                    new_action = actions[i][0].replace("#", str(tmp_val))
+                    if new_action == action:
+                        # print("setting # = %d for %s" %
+                        #       (int(splits_split[j]), actions[i][0]))
+                        p.cur_val = tmp_val
                         found_inner = True
                         break
 
         if found_inner:
+            print("found_inner for '%s'" % action)
             found = True
             send_message("UPDATEB %s %s %s: %s" %
                          (splits[0], splits[1], p.name, splits[3]))
