@@ -1,4 +1,4 @@
-from shared import miqtt_client, send_message
+from shared import mqtt_client, send_message
 import time
 import sys
 
