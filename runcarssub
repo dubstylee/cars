@@ -1,0 +1,6 @@
+python property.py &
+python monitor.py &
+python car.py 1 1 3 &
+python car.py 2 2 4 &
+python car.py 3 3 2 &
+python car.py 4 4 1 &
